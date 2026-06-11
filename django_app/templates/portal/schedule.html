@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Thời Khóa Biểu - Điểm Danh{% endblock %}
+
+{% block content %}
+<!-- Ambient Background Blobs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div
+        class="absolute top-0 -left-40 w-[600px] h-[600px] bg-primary/20 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-blob">
+    </div>
+    <div
+        class="absolute top-0 -right-40 w-[500px] h-[500px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-60 animate-blob delay-200">
+    </div>
+</div>
+
+<!-- Main Content -->
+<main class="relative z-10 p-4 min-h-screen">
+    <div class="container mx-auto max-w-7xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-4xl">calendar_month</span>
+                <h1 class="text-3xl font-bold">Thời Khóa Biểu</h1>
+            </div>
+            <div class="flex gap-3">
+                <a href="{% url 'portal:scan_camera' %}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 rounded-xl transition-colors">
+                    <span class="material-symbols-outlined">videocam</span>
+                    Điểm danh nhanh
+                </a>
+                <a href="{% url 'portal:home' %}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    Trang chủ
+                </a>
+            </div>
+        </div>
+
+        <!-- Active Sessions -->
+        {% if active_sessions %}
+        <div class="glass-card rounded-3xl p-6 mb-6 border-2 border-green-500/50">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="relative flex h-3 w-3">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <h2 class="text-xl font-bold text-green-400">Buổi Đang Điểm Danh</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for session in active_sessions %}
+                <a href="{% url 'portal:attendance_session' session.id %}"
+                    class="block p-4 bg-green-500/20 hover:bg-green-500/30 rounded-xl transition-colors border border-green-500/50">
+                    <div class="font-bold text-lg mb-1">{{ session.schedule.subject.name }}</div>
+                    <div class="text-slate-300">{{ session.schedule.classroom.name }}</div>
+                    <div class="text-sm text-slate-400 mt-2">
+                        <span class="material-symbols-outlined text-sm align-middle">schedule</span>
+                        {{ session.schedule.get_time_range }}
+                    </div>
+                    <div class="flex justify-between mt-3">
+                        <span class="text-green-400 text-sm">
+                            {{ session.get_present_count }}/{{ session.get_total_students }} có mặt
+                        </span>
+                        <span class="px-2 py-1 bg-green-500 rounded text-xs">Đang điểm danh</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Today Info -->
+        <div class="glass-card rounded-3xl p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold">Hôm nay: <span class="text-primary">{{ current_day_name }}</span></h2>
+                    <p class="text-slate-400">{{ today|date:"d/m/Y" }}</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-primary">{{ today_sessions.count }}</div>
+                    <div class="text-sm text-slate-400">buổi điểm danh hôm nay</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Grid -->
+        <div class="glass-card rounded-3xl p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">view_week</span>
+                Thời Khóa Biểu Tuần
+            </h2>
+
+            <!-- Day Tabs -->
+            <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+                {% for day_num, day_data in schedule_by_day.items %}
+                <button onclick="showDay({{day_num }})" id="tab-{{ day_num }}"
+                    class="day-tab px-4 py-2 rounded-xl whitespace-nowrap transition-colors
+                               {% if day_num == current_day %}bg-primary text-white{% else %}bg-slate-700 hover:bg-slate-600{% endif %}">
+                    {{ day_data.name }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Schedule Content -->
+            {% for day_num, day_data in schedule_by_day.items %}
+            <div id="schedule-{{ day_num }}" class="schedule-content {% if day_num != current_day %}hidden{% endif %}">
+                {% if day_data.schedules %}
+                <div class="space-y-3">
+                    {% for schedule in day_data.schedules %}
+                    <div
+                        class="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-20 text-center">
+                                <div class="text-xs text-slate-400">Tiết {{ schedule.start_period }}-{{ schedule.end_period }}</div>
+                                <div class="text-sm font-medium">{{ schedule.get_time_range }}</div>
+                            </div>
+                            <div class="w-px h-12 bg-slate-600"></div>
+                            <div>
+                                <div class="font-bold text-lg">{{ schedule.subject.name }}</div>
+                                <div class="text-slate-400 text-sm">
+                                    <span class="material-symbols-outlined text-sm align-middle">groups</span>
+                                    {{ schedule.classroom.name }}
+                                    {% if schedule.room %}
+                                    <span class="mx-2">•</span>
+                                    <span class="material-symbols-outlined text-sm align-middle">meeting_room</span>
+                                    {{ schedule.room }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="{% url 'portal:start_session' schedule.id %}"
+                                class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 rounded-xl transition-colors">
+                                <span class="material-symbols-outlined">play_arrow</span>
+                                Bắt đầu điểm danh
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-slate-400 py-12">
+                    <span class="material-symbols-outlined text-4xl mb-2">event_busy</span>
+                    <p>Không có lịch học trong ngày này</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Today's Sessions -->
+        {% if today_sessions %}
+        <div class="glass-card rounded-3xl p-6 mt-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">history</span>
+                Các Buổi Điểm Danh Hôm Nay
+            </h2>
+            <div class="space-y-3">
+                {% for session in today_sessions %}
+                <div class="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-xl flex items-center justify-center
+                                    {% if session.status == 'completed' %}bg-green-500/20 text-green-400
+                                    {% elif session.status == 'active' %}bg-blue-500/20 text-blue-400
+                                    {% else %}bg-slate-700 text-slate-400{% endif %}">
+                            <span class="material-symbols-outlined text-2xl">
+                                {% if session.status == 'completed' %}check_circle
+                                {% elif session.status == 'active' %}pending
+                                {% else %}schedule{% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            <div class="font-bold">{{ session.schedule.subject.name }}</div>
+                            <div class="text-slate-400 text-sm">{{ session.schedule.classroom.name }}</div>
+                            <div class="text-sm mt-1">
+                                <span class="text-green-400">{{ session.get_present_count }} có mặt</span>
+                                <span class="text-slate-500 mx-1">/</span>
+                                <span class="text-slate-400">{{ session.get_total_students }} tổng</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-slate-400">Buổi #{{ session.id }}</div>
+                        <span class="inline-block px-3 py-1 rounded-full text-xs mt-1
+                                     {% if session.status == 'completed' %}bg-green-500/20 text-green-400
+                                     {% elif session.status == 'active' %}bg-blue-500/20 text-blue-400
+                                     {% else %}bg-slate-700 text-slate-400{% endif %}">
+                            {{ session.get_status_display }}
+                        </span>
+                        {% if session.status == 'active' %}
+                        <a href="{% url 'portal:attendance_session' session.id %}"
+                            class="block mt-2 text-primary hover:underline text-sm">
+                            Tiếp tục điểm danh →
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</main>
+
+<script>
+    function showDay(dayNum) {
+        // Hide all schedule contents
+        document.querySelectorAll('.schedule-content').forEach(el => el.classList.add('hidden'));
+        // Show selected day
+        document.getElementById('schedule-' + dayNum).classList.remove('hidden');
+
+        // Update tab styles
+        document.querySelectorAll('.day-tab').forEach(el => {
+            el.classList.remove('bg-primary', 'text-white');
+            el.classList.add('bg-slate-700');
+        });
+        document.getElementById('tab-' + dayNum).classList.remove('bg-slate-700');
+        document.getElementById('tab-' + dayNum).classList.add('bg-primary', 'text-white');
+    }
+</script>
+{% endblock %}

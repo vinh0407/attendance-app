@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - Attendance System{% endblock %}
+
+{% block content %}
+<!-- Ambient Background Blobs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute top-0 -left-40 w-[600px] h-[600px] bg-primary/20 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-blob"></div>
+    <div class="absolute -bottom-40 right-0 w-[500px] h-[500px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-60 animate-blob delay-200"></div>
+</div>
+
+<!-- Top Navigation -->
+<header class="relative z-50 flex items-center justify-between px-6 py-4 lg:px-12 w-full max-w-7xl mx-auto">
+    <a href="{% url 'portal:home' %}" class="flex items-center gap-3 glass-card px-4 py-2 rounded-full hover:border-primary/30 transition-all duration-300 group">
+        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">arrow_back</span>
+        <span class="font-bold text-sm tracking-wide">Quay lại Trang chủ</span>
+    </a>
+    <div class="flex items-center gap-4">
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 glass-card rounded-full">
+            <span class="material-symbols-outlined text-sm text-slate-400">schedule</span>
+            <span id="currentTime" class="text-xs font-medium text-slate-300"></span>
+        </div>
+        <div class="flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full">
+            <span class="material-symbols-outlined text-purple-400">admin_panel_settings</span>
+            <span class="text-xs font-medium text-purple-400 uppercase tracking-wider">Quản trị</span>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="relative z-10 flex-1 p-4 lg:p-8 overflow-y-auto" style="max-height: calc(100vh - 100px);">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Bảng Điều Khiển Quản Trị</h1>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary">groups</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-400">Tổng sinh viên</p>
+                        <p class="text-2xl font-bold">{{ total_students }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-green-400">how_to_reg</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-400">Đã đăng ký mặt</p>
+                        <p class="text-2xl font-bold text-green-400">{{ registered_students }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-cyan-400">check_circle</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-400">Có mặt hôm nay</p>
+                        <p class="text-2xl font-bold text-cyan-400">{{ today_present }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-red-400">cancel</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-400">Vắng hôm nay</p>
+                        <p class="text-2xl font-bold text-red-400">{{ today_absent }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Records -->
+        <div class="glass-card rounded-2xl p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">history</span>
+                Lịch Sử Điểm Danh Gần Đây
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Mã SV</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Họ tên</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Ngày</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Giờ vào</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Trạng thái</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Độ tin cậy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in recent_records %}
+                        <tr class="border-b border-white/5 hover:bg-white/5">
+                            <td class="py-3 px-4 text-sm">{{ record.student.student_id }}</td>
+                            <td class="py-3 px-4 text-sm">{{ record.student.full_name }}</td>
+                            <td class="py-3 px-4 text-sm text-slate-400">{{ record.date }}</td>
+                            <td class="py-3 px-4 text-sm text-slate-400">{{ record.time_in|time:"H:i:s" }}</td>
+                            <td class="py-3 px-4 text-sm">
+                                {% if record.status == 'present' %}
+                                <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Có mặt</span>
+                                {% elif record.status == 'late' %}
+                                <span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs">Đi muộn</span>
+                                {% else %}
+                                <span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">Vắng</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4 text-sm text-slate-400">{{ record.confidence|floatformat:1 }}%</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-slate-500">Không có bản ghi nào</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Student List -->
+        <div class="glass-card rounded-2xl p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-green-400">people</span>
+                Danh Sách Sinh Viên Đã Đăng Ký
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Mã SV</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Họ tên</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Lớp</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Email</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Đăng ký mặt</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-slate-400">Ngày tạo</th>
+                            <th class="text-center py-3 px-4 text-sm font-medium text-slate-400">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr class="border-b border-white/5 hover:bg-white/5" id="student-row-{{ student.id }}">
+                            <td class="py-3 px-4 text-sm font-medium">{{ student.student_id }}</td>
+                            <td class="py-3 px-4 text-sm">{{ student.full_name }}</td>
+                            <td class="py-3 px-4 text-sm text-slate-400">{{ student.class_name|default:"-" }}</td>
+                            <td class="py-3 px-4 text-sm text-slate-400">{{ student.email|default:"-" }}</td>
+                            <td class="py-3 px-4 text-sm">
+                                {% if student.is_registered %}
+                                <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Đã đăng ký</span>
+                                {% else %}
+                                <span class="px-2 py-1 bg-slate-500/20 text-slate-400 rounded text-xs">Chưa đăng ký</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4 text-sm text-slate-400">{{ student.created_at|date:"d/m/Y" }}</td>
+                            <td class="py-3 px-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="openEditModal('{{ student.id }}', '{{ student.student_id }}', '{{ student.full_name }}', '{{ student.class_name|default:"" }}', '{{ student.email|default:"" }}')" 
+                                            class="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 rounded-lg text-xs transition-colors flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">edit</span>
+                                        Sửa
+                                    </button>
+                                    <button onclick="deleteStudent('{{ student.id }}', '{{ student.full_name }}')" 
+                                            class="px-3 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded-lg text-xs transition-colors flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">delete</span>
+                                        Xóa
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="py-8 text-center text-slate-500">Chưa có sinh viên nào</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Camera Status -->
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">videocam</span>
+                Trạng Thái Camera
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {% for camera in cameras %}
+                <div class="bg-slate-800/50 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium">{{ camera.name }}</span>
+                        {% if camera.status == 'active' %}
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                        {% else %}
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm text-slate-400">{{ camera.location }}</p>
+                    <p class="text-xs text-slate-500 mt-1">{{ camera.camera_id }}</p>
+                </div>
+                {% empty %}
+                <div class="col-span-full text-center text-slate-500 py-4">
+                    Chưa cấu hình camera nào
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Edit Student Modal -->
+<div id="editModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center">
+    <div class="glass-card rounded-2xl p-8 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold flex items-center gap-2">
+                <span class="material-symbols-outlined text-blue-400">edit</span>
+                Chỉnh Sửa Sinh Viên
+            </h3>
+            <button onclick="closeEditModal()" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="editForm" onsubmit="saveStudent(event)">
+            <input type="hidden" id="editStudentId">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Mã sinh viên</label>
+                    <input type="text" id="editStudentCode" required 
+                           class="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Họ và tên</label>
+                    <input type="text" id="editFullName" required 
+                           class="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Lớp</label>
+                    <input type="text" id="editClassName" 
+                           class="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                    <input type="email" id="editEmail" 
+                           class="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none">
+                </div>
+            </div>
+            <div class="flex gap-4 mt-6">
+                <button type="button" onclick="closeEditModal()" 
+                        class="flex-1 py-3 px-6 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold transition-colors">
+                    Hủy
+                </button>
+                <button type="submit" 
+                        class="flex-1 py-3 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold hover:from-blue-500 hover:to-indigo-500 transition-all">
+                    Lưu thay đổi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // Edit Modal Functions
+    function openEditModal(id, studentCode, fullName, className, email) {
+        document.getElementById('editStudentId').value = id;
+        document.getElementById('editStudentCode').value = studentCode;
+        document.getElementById('editFullName').value = fullName;
+        document.getElementById('editClassName').value = className;
+        document.getElementById('editEmail').value = email;
+        document.getElementById('editModal').classList.remove('hidden');
+        document.getElementById('editModal').classList.add('flex');
+    }
+    
+    function closeEditModal() {
+        document.getElementById('editModal').classList.add('hidden');
+        document.getElementById('editModal').classList.remove('flex');
+    }
+    
+    async function saveStudent(event) {
+        event.preventDefault();
+        const studentId = document.getElementById('editStudentId').value;
+        const data = {
+            student_id: document.getElementById('editStudentCode').value,
+            full_name: document.getElementById('editFullName').value,
+            class_name: document.getElementById('editClassName').value,
+            email: document.getElementById('editEmail').value
+        };
+        
+        try {
+            const response = await fetch(`/api/update-student/${studentId}/`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✓ Cập nhật thành công!');
+                closeEditModal();
+                location.reload();
+            } else {
+                alert(`✗ Lỗi: ${result.error}`);
+            }
+        } catch (error) {
+            alert(`✗ Lỗi kết nối: ${error.message}`);
+        }
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
+    
+    async function deleteStudent(studentId, studentName) {
+        if (!confirm(`Bạn có chắc muốn xóa sinh viên "${studentName}"?\n\nĐiều này sẽ xóa:\n- Thông tin sinh viên trong database\n- Dữ liệu khuôn mặt đã đăng ký\n- Ảnh trong thư mục my_faces`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/delete-student/${studentId}/`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                // Xóa row khỏi bảng
+                const row = document.getElementById(`student-row-${studentId}`);
+                if (row) {
+                    row.style.transition = 'opacity 0.3s, transform 0.3s';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(-20px)';
+                    setTimeout(() => row.remove(), 300);
+                }
+                alert(`✓ Đã xóa sinh viên "${studentName}" thành công!`);
+                // Reload trang để cập nhật số liệu
+                setTimeout(() => location.reload(), 500);
+            } else {
+                alert(`✗ Lỗi: ${data.error}`);
+            }
+        } catch (error) {
+            alert(`✗ Lỗi kết nối: ${error.message}`);
+        }
+    }
+</script>
+{% endblock %}

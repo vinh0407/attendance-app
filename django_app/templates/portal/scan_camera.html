@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Điểm Danh - Face Recognition{% endblock %}
+
+{% block content %}
+<!-- Ambient Background Blobs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute top-0 -left-40 w-[600px] h-[600px] bg-primary/20 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-blob"></div>
+    <div class="absolute top-0 -right-40 w-[500px] h-[500px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-60 animate-blob delay-200"></div>
+</div>
+
+<!-- Main Content -->
+<main class="relative z-10 flex flex-1 p-4 min-h-screen">
+    <div class="container mx-auto max-w-7xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-4xl">face</span>
+                <h1 class="text-3xl font-bold">Điểm Danh Bằng Khuôn Mặt</h1>
+            </div>
+            <a href="{% url 'portal:home' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Trang chủ
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Camera Feed -->
+            <div class="lg:col-span-2">
+                <div class="glass-card rounded-3xl p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="relative flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        </span>
+                        <span class="text-green-400 font-medium">Camera đang hoạt động</span>
+                    </div>
+                    
+                    <!-- Video Stream -->
+                    <div class="relative rounded-2xl overflow-hidden bg-slate-900">
+                        <img src="{% url 'portal:video_feed' %}" alt="Camera Feed" 
+                             class="w-full h-auto min-h-[400px] object-contain"
+                             id="video-feed">
+                        
+                        <!-- Overlay Info -->
+                        <div class="absolute top-4 left-4 bg-slate-900/80 rounded-lg px-3 py-2 text-sm">
+                            <span class="text-slate-400">Model:</span>
+                            <span class="text-white font-medium">InsightFace buffalo_l</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Controls -->
+                    <div class="flex gap-4 mt-4">
+                        <button onclick="refreshFeed()" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary hover:bg-primary/80 rounded-xl transition-colors">
+                            <span class="material-symbols-outlined">refresh</span>
+                            Làm mới Camera
+                        </button>
+                        <button onclick="captureSnapshot()" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors">
+                            <span class="material-symbols-outlined">photo_camera</span>
+                            Chụp ảnh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar - Attendance Log -->
+            <div class="lg:col-span-1">
+                <div class="glass-card rounded-3xl p-6 h-full">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">checklist</span>
+                            Đã điểm danh hôm nay
+                        </h2>
+                        <button onclick="loadAttendance()" class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                            <span class="material-symbols-outlined">refresh</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Attendance List -->
+                    <div id="attendance-list" class="space-y-3 max-h-[500px] overflow-y-auto">
+                        <!-- Will be populated by JavaScript -->
+                        <div class="text-center text-slate-400 py-8">
+                            <span class="material-symbols-outlined text-4xl mb-2">hourglass_empty</span>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="mt-6 pt-4 border-t border-slate-700">
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div class="bg-green-500/20 rounded-xl p-3">
+                                <div id="count-present" class="text-2xl font-bold text-green-400">0</div>
+                                <div class="text-sm text-slate-400">Có mặt</div>
+                            </div>
+                            <div class="bg-yellow-500/20 rounded-xl p-3">
+                                <div id="count-late" class="text-2xl font-bold text-yellow-400">0</div>
+                                <div class="text-sm text-slate-400">Đi muộn</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registered Faces -->
+                <div class="glass-card rounded-3xl p-6 mt-6">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-4">
+                        <span class="material-symbols-outlined text-primary">group</span>
+                        Khuôn mặt đã đăng ký
+                    </h2>
+                    <div id="registered-faces" class="space-y-2">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+// Refresh video feed
+function refreshFeed() {
+    const feed = document.getElementById('video-feed');
+    feed.src = "{% url 'portal:video_feed' %}?" + new Date().getTime();
+}
+
+// Capture snapshot (placeholder)
+function captureSnapshot() {
+    alert('Chức năng chụp ảnh sẽ được thêm sau');
+}
+
+// Load attendance data
+async function loadAttendance() {
+    try {
+        const response = await fetch('/api/attendance/today/');
+        const data = await response.json();
+        
+        if (data.success) {
+            const list = document.getElementById('attendance-list');
+            let presentCount = 0;
+            let lateCount = 0;
+            
+            if (data.data.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center text-slate-400 py-8">
+                        <span class="material-symbols-outlined text-4xl mb-2">person_off</span>
+                        <p>Chưa có ai điểm danh hôm nay</p>
+                    </div>
+                `;
+            } else {
+                list.innerHTML = data.data.map(record => {
+                    if (record.status === 'present') presentCount++;
+                    if (record.status === 'late') lateCount++;
+                    
+                    const statusColor = record.status === 'present' ? 'green' : 'yellow';
+                    const statusText = record.status === 'present' ? 'Có mặt' : 'Đi muộn';
+                    
+                    return `
+                        <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-primary">person</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium">${record.student_name}</div>
+                                    <div class="text-sm text-slate-400">${record.time_in || '--:--'}</div>
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 bg-${statusColor}-500/20 text-${statusColor}-400 rounded text-xs">
+                                ${statusText}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('count-present').textContent = presentCount;
+            document.getElementById('count-late').textContent = lateCount;
+        }
+    } catch (error) {
+        console.error('Error loading attendance:', error);
+    }
+}
+
+// Load registered faces
+async function loadRegisteredFaces() {
+    try {
+        const response = await fetch('/api/registered-faces/');
+        const data = await response.json();
+        
+        if (data.success) {
+            const container = document.getElementById('registered-faces');
+            
+            if (data.data.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-sm">Chưa có khuôn mặt nào được đăng ký</p>';
+            } else {
+                container.innerHTML = data.data.map(face => `
+                    <div class="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg">
+                        <span class="font-medium">${face.name}</span>
+                        <span class="text-sm text-slate-400">${face.embeddings_count} ảnh</span>
+                    </div>
+                `).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading registered faces:', error);
+    }
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAttendance();
+    loadRegisteredFaces();
+    
+    // Auto-refresh attendance every 5 seconds
+    setInterval(loadAttendance, 5000);
+});
+</script>
+{% endblock %}

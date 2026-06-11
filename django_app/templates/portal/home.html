@@ -1,0 +1,566 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}OpenCV AI Portal - Smart Vision Attendance{% endblock %}
+
+{% block content %}
+<!-- Ambient Background Blobs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute top-0 -left-40 w-[600px] h-[600px] bg-primary/20 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-blob"></div>
+    <div class="absolute top-0 -right-40 w-[500px] h-[500px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-60 animate-blob delay-200"></div>
+    <div class="absolute -bottom-40 left-1/2 transform -translate-x-1/2 w-[700px] h-[700px] bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-blob delay-400"></div>
+</div>
+
+<!-- Top Navigation -->
+<header class="relative z-50 flex items-center justify-between px-6 py-4 lg:px-12 w-full max-w-7xl mx-auto">
+    <div class="flex items-center gap-3 glass-card px-4 py-2 rounded-full cursor-pointer hover:border-primary/30 transition-all duration-300 group">
+        <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">visibility</span>
+        <span class="font-bold text-sm tracking-wide">ĐIỂM DANH AI</span>
+    </div>
+    <div class="flex items-center gap-4">
+        <!-- Current Time -->
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 glass-card rounded-full">
+            <span class="material-symbols-outlined text-sm text-slate-400">schedule</span>
+            <span id="currentTime" class="text-xs font-medium text-slate-300"></span>
+        </div>
+
+        <!-- System Status -->
+        <div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span class="text-xs font-medium text-green-400 uppercase tracking-wider">Hệ thống hoạt động</span>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="hidden md:flex items-center gap-2">
+            <button id="settingsBtn" class="has-tooltip relative flex items-center justify-center h-10 w-10 rounded-full glass-card hover:bg-white/5 transition-colors">
+                <span class="material-symbols-outlined text-sm">settings</span>
+                <span class="tooltip absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap">Cài đặt</span>
+            </button>
+            <button id="helpBtn" class="has-tooltip relative flex items-center justify-center h-10 w-10 rounded-full glass-card hover:bg-white/5 transition-colors">
+                <span class="material-symbols-outlined text-sm">help</span>
+                <span class="tooltip absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap">Trợ giúp</span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content Area -->
+<main class="relative z-10 flex flex-1 items-center justify-center p-4">
+    <div class="glass-card w-full max-w-4xl p-1 rounded-3xl overflow-hidden relative group">
+        <!-- Subtle animated border -->
+        <div class="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+
+        <div class="relative flex flex-col md:flex-row min-h-[500px]">
+            <!-- Left Side: Visual / Info -->
+            <div class="flex-1 p-8 md:p-12 flex flex-col justify-center border-b md:border-b-0 md:border-r border-white/10">
+                <div class="mb-8">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider mb-6 border border-primary/20 animate-pulse-slow">
+                        <span class="material-symbols-outlined text-sm">new_releases</span>
+                        v.2.4.0 Beta
+                    </div>
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-4">
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-white/70 animate-float inline-block">Điểm Danh</span><br />
+                        <span class="text-glow">Thông Minh</span>
+                    </h1>
+                    <p class="text-lg text-slate-400 leading-relaxed max-w-sm">
+                        Được hỗ trợ bởi <span class="text-primary font-semibold">OpenCV + Python</span>. Quản lý lớp học dễ dàng với công nghệ nhận diện khuôn mặt thời gian thực.
+                    </p>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="flex gap-4 mb-8">
+                    <div class="flex items-center gap-2 text-sm">
+                        <span class="material-symbols-outlined text-green-400">check_circle</span>
+                        <span class="text-slate-400"><span class="text-white font-bold">99.2%</span> Độ chính xác</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        <span class="material-symbols-outlined text-primary">bolt</span>
+                        <span class="text-slate-400"><span class="text-white font-bold">&lt;1s</span> Phản hồi</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4 mt-auto">
+                    <div class="flex items-center gap-4 text-slate-400 text-sm font-medium uppercase tracking-widest opacity-60 mb-2">
+                        Công nghệ cốt lõi
+                    </div>
+                    <div class="flex gap-6">
+                        <div class="flex flex-col items-center gap-2 group/icon cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/icon:border-primary/50 group-hover/icon:bg-primary/10 transition-all">
+                                <span class="material-symbols-outlined text-slate-400 group-hover/icon:text-primary">view_in_ar</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-widest">OpenCV</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 group/icon cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/icon:border-primary/50 group-hover/icon:bg-primary/10 transition-all">
+                                <span class="material-symbols-outlined text-slate-400 group-hover/icon:text-primary">code</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-widest">Python</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 group/icon cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/icon:border-primary/50 group-hover/icon:bg-primary/10 transition-all">
+                                <span class="material-symbols-outlined text-slate-400 group-hover/icon:text-primary">psychology</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-widest">AI Model</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 group/icon cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/icon:border-primary/50 group-hover/icon:bg-primary/10 transition-all">
+                                <span class="material-symbols-outlined text-slate-400 group-hover/icon:text-primary">cloud</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-widest">Đám mây</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Actions -->
+            <div class="flex-1 p-8 md:p-12 flex flex-col justify-center bg-black/20 backdrop-blur-sm">
+                <h2 class="text-xl font-semibold mb-2 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                    Chọn Cổng Truy Cập
+                </h2>
+                <p class="text-sm text-slate-500 mb-8">Chọn loại truy cập để tiếp tục</p>
+
+                <div class="space-y-4">
+                    <!-- Schedule / Time Table - Moved to top -->
+                    <a href="{% url 'portal:schedule' %}" class="btn-glow group relative w-full p-1 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] focus:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-500/20 block">
+                        <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                        <div class="relative flex items-center justify-between bg-[#151a25] border border-purple-500/20 group-hover:border-purple-500/40 p-6 rounded-xl transition-all duration-300">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-purple-400 text-2xl">calendar_month</span>
+                                </div>
+                                <div class="text-left">
+                                    <h3 class="font-semibold text-lg">Thời Khóa Biểu</h3>
+                                    <p class="text-sm text-slate-400">Điểm danh theo buổi học</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-purple-400 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </div>
+                    </a>
+
+                    <!-- Admin Button -->
+                    <button id="adminBtn" class="btn-glow group relative w-full p-1 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] focus:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/20">
+                        <div class="absolute inset-0 bg-gradient-to-r from-slate-600 to-slate-700 opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                        <div class="relative flex items-center justify-between bg-[#151a25] border border-white/10 group-hover:border-white/20 p-6 rounded-xl transition-all duration-300">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-slate-500/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-slate-400 text-2xl">admin_panel_settings</span>
+                                </div>
+                                <div class="text-left">
+                                    <h3 class="font-semibold text-lg">Bảng Điều Khiển Admin</h3>
+                                    <p class="text-sm text-slate-400">Quản lý hồ sơ & người dùng</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-slate-400">lock</span>
+                        </div>
+                    </button>
+
+                    <!-- Register New Face -->
+                    <button id="registerBtn" class="btn-glow group relative w-full p-1 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] focus:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-green-500/20">
+                        <div class="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                        <div class="relative flex items-center justify-between bg-[#151a25] border border-green-500/20 group-hover:border-green-500/40 p-6 rounded-xl transition-all duration-300">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-green-400 text-2xl">person_add</span>
+                                </div>
+                                <div class="text-left">
+                                    <h3 class="font-semibold text-lg">Đăng Ký Khuôn Mặt Mới</h3>
+                                    <p class="text-sm text-slate-400">Thêm sinh viên mới vào hệ thống</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-green-400 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </div>
+                    </button>
+
+                    <!-- Student Button - Test Demo - Moved to bottom -->
+                    <button id="scanFaceBtn" class="btn-glow group relative w-full p-1 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] focus:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                        <div class="relative flex items-center justify-between bg-[#151a25] border border-primary/30 group-hover:border-primary/60 p-6 rounded-xl transition-all duration-300">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-primary text-2xl">face</span>
+                                </div>
+                                <div class="text-left">
+                                    <h3 class="font-semibold text-lg">Test Điểm Danh Demo</h3>
+                                    <p class="text-sm text-slate-400">Quét khuôn mặt để điểm danh</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="mt-8 pt-8 border-t border-white/10">
+                    <div class="flex justify-between items-center text-xs text-slate-500">
+                        <span class="flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                            Kết nối bảo mật
+                        </span>
+                        <a class="hover:text-primary transition-colors flex items-center gap-1" href="#" id="needHelpLink">
+                            <span class="material-symbols-outlined text-sm">help_outline</span>
+                            Cần trợ giúp?
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Stats Ticker -->
+<div class="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 pb-8">
+    <div class="glass-card rounded-xl p-4 flex flex-wrap justify-between items-center gap-4 md:gap-8">
+        <div class="flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform">
+            <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                <span class="material-symbols-outlined text-primary">groups</span>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Tổng sinh viên</p>
+                <p id="totalStudents" class="text-lg font-bold">{{ total_students }}</p>
+            </div>
+        </div>
+        <div class="w-px h-10 bg-white/10 hidden md:block"></div>
+        <div class="flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform">
+            <div class="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                <span class="material-symbols-outlined text-green-400">check_circle</span>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Điểm danh hôm nay</p>
+                <p id="todayAttendance" class="text-lg font-bold text-green-400">{{ attendance_rate }}%</p>
+            </div>
+        </div>
+        <div class="w-px h-10 bg-white/10 hidden md:block"></div>
+        <div class="flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform">
+            <div class="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                <span class="material-symbols-outlined text-purple-400">videocam</span>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Camera hoạt động</p>
+                <p id="activeCameras" class="text-lg font-bold text-purple-400">{{ active_cameras|stringformat:"02d" }}</p>
+            </div>
+        </div>
+        <div class="w-px h-10 bg-white/10 hidden md:block"></div>
+        <div class="flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform">
+            <div class="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                <span class="material-symbols-outlined text-cyan-400">timer</span>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Tốc độ quét TB</p>
+                <p class="text-lg font-bold text-cyan-400">{{ avg_scan_time }}s</p>
+            </div>
+        </div>
+        <div class="w-px h-10 bg-white/10 hidden md:block"></div>
+        <div class="flex-1 flex justify-end">
+            <p class="text-xs text-slate-500 text-right">
+                Đồng bộ lần cuối: <span id="lastSync" class="text-slate-300">Vừa xong</span><br />
+                Máy chủ: <span class="text-green-400">● Trực tuyến</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Scan Face Modal -->
+<div id="scanModal" class="fixed inset-0 z-[100] hidden">
+    <div class="modal-backdrop absolute inset-0" id="modalBackdrop"></div>
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+        <div class="glass-card rounded-3xl p-8 max-w-md w-full transform scale-95 opacity-0 transition-all duration-300" id="modalContent">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">face</span>
+                    Quét Khuôn Mặt
+                </h3>
+                <button id="closeModal" class="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-white/10 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div id="scanContent" class="text-center">
+                <!-- Initial State -->
+                <div id="scanInitial">
+                    <div class="face-scan-container mx-auto mb-6 bg-slate-800/50">
+                        <div class="face-scan-ring"></div>
+                        <div class="face-scan-ring"></div>
+                        <div class="face-scan-ring"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-6xl text-slate-600">person</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 mb-6">Nhấn nút bên dưới để mở camera và bắt đầu nhận diện khuôn mặt.</p>
+                    <button id="startScanBtn" class="w-full py-4 px-6 bg-gradient-to-r from-primary to-indigo-600 rounded-xl font-bold text-lg hover:from-primary-glow hover:to-indigo-500 transition-all duration-300 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">camera</span>
+                        Mở Camera
+                    </button>
+                </div>
+
+                <!-- Loading State -->
+                <div id="scanLoading" class="hidden">
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="spinner"></div>
+                        <p class="text-slate-400">Đang kết nối camera...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-white/10 text-center">
+                <p class="text-xs text-slate-500">
+                    <span class="material-symbols-outlined text-[12px] align-middle">info</span>
+                    Đảm bảo khuôn mặt được chiếu sáng tốt và nhìn thẳng vào camera
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div id="helpModal" class="fixed inset-0 z-[100] hidden">
+    <div class="modal-backdrop absolute inset-0" id="helpModalBackdrop"></div>
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+        <div class="glass-card rounded-3xl p-8 max-w-lg w-full transform scale-95 opacity-0 transition-all duration-300" id="helpModalContent">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">help</span>
+                    Hướng Dẫn Sử Dụng
+                </h3>
+                <button id="closeHelpModal" class="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-white/10 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex gap-4 p-4 rounded-xl bg-white/5">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <span class="font-bold">1</span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-1">Nhấn "Điểm Danh Sinh Viên"</h4>
+                        <p class="text-sm text-slate-400">Hoặc nhấn phím Enter để truy cập nhanh</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 p-4 rounded-xl bg-white/5">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <span class="font-bold">2</span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-1">Mở Camera</h4>
+                        <p class="text-sm text-slate-400">Cho phép truy cập camera khi được yêu cầu</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 p-4 rounded-xl bg-white/5">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <span class="font-bold">3</span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-1">Nhìn vào Camera</h4>
+                        <p class="text-sm text-slate-400">Nhìn thẳng vào camera để có kết quả tốt nhất</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 p-4 rounded-xl bg-white/5">
+                    <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 shrink-0">
+                        <span class="material-symbols-outlined">check</span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-1">Hoàn thành!</h4>
+                        <p class="text-sm text-slate-400">Điểm danh của bạn sẽ được ghi nhận tự động</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
+                <p class="text-sm">
+                    <span class="font-semibold text-primary">Phím tắt:</span><br />
+                    <span class="text-slate-400">Nhấn <span class="kbd mx-1">Enter</span> để quét nhanh</span><br />
+                    <span class="text-slate-400">Nhấn <span class="kbd mx-1">Esc</span> để đóng cửa sổ</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // =====================================================
+    // Configuration - URLs từ Django
+    // =====================================================
+    const CONFIG = {
+        // URL tới plugin OpenCV - Anh sẽ thay đổi view scan_camera
+        OPENCV_PLUGIN_URL: '{{ opencv_plugin_url }}',
+        ADMIN_URL: '{{ admin_url }}',
+        REGISTER_URL: '{{ register_url }}',
+        API_STATS_URL: '{% url "portal:api_stats" %}',
+    };
+
+    // =====================================================
+    // DOM Elements
+    // =====================================================
+    const elements = {
+        scanFaceBtn: document.getElementById('scanFaceBtn'),
+        adminBtn: document.getElementById('adminBtn'),
+        registerBtn: document.getElementById('registerBtn'),
+        scanModal: document.getElementById('scanModal'),
+        modalBackdrop: document.getElementById('modalBackdrop'),
+        modalContent: document.getElementById('modalContent'),
+        closeModal: document.getElementById('closeModal'),
+        startScanBtn: document.getElementById('startScanBtn'),
+        scanInitial: document.getElementById('scanInitial'),
+        scanLoading: document.getElementById('scanLoading'),
+        helpBtn: document.getElementById('helpBtn'),
+        needHelpLink: document.getElementById('needHelpLink'),
+        helpModal: document.getElementById('helpModal'),
+        helpModalBackdrop: document.getElementById('helpModalBackdrop'),
+        helpModalContent: document.getElementById('helpModalContent'),
+        closeHelpModal: document.getElementById('closeHelpModal'),
+        currentTime: document.getElementById('currentTime'),
+        lastSync: document.getElementById('lastSync'),
+        totalStudents: document.getElementById('totalStudents'),
+        todayAttendance: document.getElementById('todayAttendance'),
+        activeCameras: document.getElementById('activeCameras'),
+    };
+
+    // =====================================================
+    // Modal Functions
+    // =====================================================
+    function openModal(modal, content) {
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        });
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModalFn(modal, content) {
+        content.classList.add('scale-95', 'opacity-0');
+        content.classList.remove('scale-100', 'opacity-100');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 300);
+    }
+
+    function openScanModal() {
+        elements.scanInitial.classList.remove('hidden');
+        elements.scanLoading.classList.add('hidden');
+        openModal(elements.scanModal, elements.modalContent);
+    }
+
+    function closeScanModal() {
+        closeModalFn(elements.scanModal, elements.modalContent);
+    }
+
+    function startFaceScan() {
+        elements.scanInitial.classList.add('hidden');
+        elements.scanLoading.classList.remove('hidden');
+
+        // Redirect tới plugin OpenCV
+        setTimeout(() => {
+            window.location.href = CONFIG.OPENCV_PLUGIN_URL;
+        }, 1500);
+    }
+
+    function openHelpModal() {
+        openModal(elements.helpModal, elements.helpModalContent);
+    }
+
+    function closeHelpModalFn() {
+        closeModalFn(elements.helpModal, elements.helpModalContent);
+    }
+
+    // =====================================================
+    // API Functions
+    // =====================================================
+    async function fetchStats() {
+        try {
+            const response = await fetch(CONFIG.API_STATS_URL);
+            const data = await response.json();
+            if (data.success) {
+                elements.totalStudents.textContent = data.data.total_students;
+                elements.todayAttendance.textContent = data.data.attendance_rate + '%';
+                elements.activeCameras.textContent = String(data.data.active_cameras).padStart(2, '0');
+                elements.lastSync.textContent = data.data.last_sync;
+            }
+        } catch (error) {
+            console.error('Failed to fetch stats:', error);
+        }
+    }
+
+    // =====================================================
+    // Event Listeners
+    // =====================================================
+    elements.scanFaceBtn.addEventListener('click', openScanModal);
+    elements.closeModal.addEventListener('click', closeScanModal);
+    elements.modalBackdrop.addEventListener('click', closeScanModal);
+    elements.startScanBtn.addEventListener('click', startFaceScan);
+
+    elements.helpBtn?.addEventListener('click', openHelpModal);
+    elements.needHelpLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openHelpModal();
+    });
+    elements.closeHelpModal?.addEventListener('click', closeHelpModalFn);
+    elements.helpModalBackdrop?.addEventListener('click', closeHelpModalFn);
+
+    elements.adminBtn.addEventListener('click', () => {
+        showToast('Đang chuyển đến Bảng điều khiển...', 'info');
+        setTimeout(() => {
+            window.location.href = CONFIG.ADMIN_URL;
+        }, 1000);
+    });
+
+    elements.registerBtn.addEventListener('click', () => {
+        showToast('Đang mở trang đăng ký...', 'info');
+        setTimeout(() => {
+            window.location.href = CONFIG.REGISTER_URL;
+        }, 1000);
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && elements.scanModal.classList.contains('hidden')) {
+            openScanModal();
+        }
+        if (e.key === 'Escape') {
+            if (!elements.scanModal.classList.contains('hidden')) {
+                closeScanModal();
+            }
+            if (!elements.helpModal.classList.contains('hidden')) {
+                closeHelpModalFn();
+            }
+        }
+    });
+
+    // Ripple effect
+    document.querySelectorAll('.btn-glow').forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.width = ripple.style.height = `${size}px`;
+            ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+            ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+            this.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        });
+    });
+
+    // =====================================================
+    // Initialize
+    // =====================================================
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // Fetch stats every 30 seconds
+    setInterval(fetchStats, 30000);
+
+    setTimeout(() => {
+        showToast('Hệ thống sẵn sàng. Nhấn Enter để quét.', 'success');
+    }, 1000);
+
+    console.log('🚀 Hệ thống Điểm Danh AI đã khởi tạo (Django)');
+</script>
+{% endblock %}

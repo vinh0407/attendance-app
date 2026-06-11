@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Điểm Danh - {{ session.schedule.subject.name }}{% endblock %}
+
+{% block content %}
+<!-- Ambient Background Blobs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div
+        class="absolute top-0 -left-40 w-[600px] h-[600px] bg-primary/20 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-blob">
+    </div>
+    <div
+        class="absolute top-0 -right-40 w-[500px] h-[500px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-60 animate-blob delay-200">
+    </div>
+</div>
+
+<!-- Main Content -->
+<main class="relative z-10 p-4 min-h-screen">
+    <div class="container mx-auto max-w-7xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-4xl">face</span>
+                <div>
+                    <h1 class="text-2xl font-bold">{{ session.schedule.subject.name }}</h1>
+                    <p class="text-slate-400">
+                        {{ session.schedule.classroom.name }} | {{ session.date|date:"d/m/Y" }}
+                    </p>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                {% if session.status == 'active' %}
+                <a href="{% url 'portal:end_session' session.id %}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 rounded-xl transition-colors">
+                    <span class="material-symbols-outlined">stop_circle</span>
+                    Kết thúc
+                </a>
+                {% endif %}
+                <a href="{% url 'portal:schedule' %}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    Thời khóa biểu
+                </a>
+            </div>
+        </div>
+
+        <!-- Session Info Card -->
+        <div class="glass-card rounded-3xl p-6 mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-primary">{{ session.id }}</div>
+                    <div class="text-sm text-slate-400">Buổi #</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-400">{{ attended_count }}</div>
+                    <div class="text-sm text-slate-400">Có mặt</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-slate-400">{{ total_students }}</div>
+                    <div class="text-sm text-slate-400">Tổng số</div>
+                </div>
+                <div class="text-center">
+                    <span class="inline-block px-4 py-2 rounded-full text-sm
+                                 {% if session.status == 'active' %}bg-green-500/20 text-green-400
+                                 {% elif session.status == 'completed' %}bg-blue-500/20 text-blue-400
+                                 {% else %}bg-slate-700 text-slate-400{% endif %}">
+                        {{ session.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Camera Feed -->
+            <div class="lg:col-span-2">
+                <div class="glass-card rounded-3xl p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        {% if session.status == 'active' %}
+                        <span class="relative flex h-3 w-3">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        </span>
+                        <span class="text-green-400 font-medium">Camera đang hoạt động</span>
+                        {% else %}
+                        <span class="w-3 h-3 rounded-full bg-slate-500"></span>
+                        <span class="text-slate-400 font-medium">Buổi điểm danh đã kết thúc</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Video Stream -->
+                    {% if session.status == 'active' %}
+                    <div class="relative rounded-2xl overflow-hidden bg-slate-900">
+                        <img src="{% url 'portal:video_feed_session' session.id %}" alt="Camera Feed"
+                            class="w-full h-auto min-h-[400px] object-contain" id="video-feed">
+
+                        <!-- Overlay Info -->
+                        <div class="absolute top-4 left-4 bg-slate-900/80 rounded-lg px-3 py-2 text-sm">
+                            <div class="text-white font-medium">Buổi #{{ session.id }}</div>
+                            <div class="text-slate-400">{{ session.schedule.subject.name }}</div>
+                        </div>
+
+                        <div class="absolute bottom-4 right-4 bg-slate-900/80 rounded-lg px-3 py-2">
+                            <div class="text-green-400 font-bold" id="attendance-count">{{ attended_count }}/{{
+                                total_students }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="rounded-2xl bg-slate-900 min-h-[400px] flex items-center justify-center">
+                        <div class="text-center text-slate-400">
+                            <span class="material-symbols-outlined text-6xl mb-4">videocam_off</span>
+                            <p>Buổi điểm danh đã kết thúc</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Attendance List -->
+            <div class="lg:col-span-1">
+                <div class="glass-card rounded-3xl p-6 h-full">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">checklist</span>
+                            Danh sách điểm danh
+                        </h2>
+                        <button onclick="loadAttendance()" class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                            <span class="material-symbols-outlined">refresh</span>
+                        </button>
+                    </div>
+
+                    <!-- Attendance Records -->
+                    <div id="attendance-list" class="space-y-3 max-h-[500px] overflow-y-auto">
+                        {% for record in attendance_records %}
+                        <div
+                            class="flex items-center justify-between p-3 bg-green-500/10 rounded-xl border border-green-500/30">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-green-400">check</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium">{{ record.student.full_name }}</div>
+                                    <div class="text-sm text-slate-400">{{ record.student.class_name }}</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-green-400 font-medium">{{ record.time_in|time:"H:i:s" }}</div>
+                                <div class="text-xs text-slate-400">{{ record.confidence|floatformat:1 }}%</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-slate-400 py-8">
+                            <span class="material-symbols-outlined text-4xl mb-2">person_off</span>
+                            <p>Chưa có ai điểm danh</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students in Class -->
+        <div class="glass-card rounded-3xl p-6 mt-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">groups</span>
+                Danh sách sinh viên lớp {{ session.schedule.classroom.name }}
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {% for student in students_in_class %}
+                {% with attended=student.id|stringformat:"s" %}
+                <div class="flex items-center justify-between p-3 rounded-xl
+                            {% if student.id in attendance_records.values_list.student_id %}bg-green-500/10 border border-green-500/30
+                            {% else %}bg-slate-800/50{% endif %}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-slate-400">person</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">{{ student.full_name }}</div>
+                            <div class="text-sm text-slate-400">{{ student.student_id }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% empty %}
+                <div class="col-span-full text-center text-slate-400 py-8">
+                    <p>Chưa có sinh viên trong lớp này</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const sessionId = {{ session.id }};
+
+    async function loadAttendance() {
+        try {
+            const response = await fetch(`/api/session/${sessionId}/attendance/`);
+            const data = await response.json();
+
+            if (data.success) {
+                const list = document.getElementById('attendance-list');
+
+                if (data.data.length === 0) {
+                    list.innerHTML = `
+                    <div class="text-center text-slate-400 py-8">
+                        <span class="material-symbols-outlined text-4xl mb-2">person_off</span>
+                        <p>Chưa có ai điểm danh</p>
+                    </div>
+                `;
+                } else {
+                    list.innerHTML = data.data.map(record => `
+                    <div class="flex items-center justify-between p-3 bg-green-500/10 rounded-xl border border-green-500/30">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-green-400">check</span>
+                            </div>
+                            <div>
+                                <div class="font-medium">${record.student_name}</div>
+                                <div class="text-sm text-slate-400">${record.class_name}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-green-400 font-medium">${record.time_in}</div>
+                            <div class="text-xs text-slate-400">${record.confidence}%</div>
+                        </div>
+                    </div>
+                `).join('');
+                }
+
+                // Update count
+                const countEl = document.getElementById('attendance-count');
+                if (countEl) {
+                    countEl.textContent = `${data.data.length}/{{ total_students }}`;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading attendance:', error);
+        }
+    }
+
+    // Auto-refresh attendance list every 3 seconds
+    {% if session.status == 'active' %}
+    setInterval(loadAttendance, 3000);
+    {% endif %}
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', loadAttendance);
+</script>
+{% endblock %}
