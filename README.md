@@ -193,6 +193,6 @@ attendance-app/
 `-- README.md
 ```
 
-## License
-
-No project-level open-source license has been declared. Third-party dependencies retain their respective licenses.
+## Demo
+<img width="1265" height="712" alt="desktop" src="https://github.com/user-attachments/assets/94e7806a-9c4d-4fda-9a81-83e6459af1e8" />
+Dashboard Portal
