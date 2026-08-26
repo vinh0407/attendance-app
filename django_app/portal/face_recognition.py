@@ -118,7 +118,14 @@ def register_face(name, image, student_id='', class_name='', email=''):
     existing_images = [f for f in os.listdir(person_dir) if f.endswith(('.jpg', '.jpeg', '.png'))]
     img_index = len(existing_images) + 1
     img_path = os.path.join(person_dir, 'face.png' if img_index == 1 else f'face_{img_index:02d}.png')
-    cv2.imwrite(img_path, image)
+    # cv2.imwrite cannot reliably create files in Unicode Windows paths.
+    # Encode first, then write bytes through Python so Vietnamese student
+    # names and class labels are preserved on disk.
+    success, encoded = cv2.imencode('.png', image)
+    if not success:
+        return False, "Không thể mã hóa ảnh khuôn mặt"
+    with open(img_path, 'wb') as stream:
+        stream.write(encoded.tobytes())
 
     metadata = {
         'student_id': str(student_id or ''),

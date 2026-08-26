@@ -69,7 +69,7 @@ def home(request):
     total_students = Student.objects.count()
     
     # Tính tỷ lệ điểm danh hôm nay
-    today = timezone.now().date()
+    today = timezone.localdate()
     today_attendance = AttendanceRecord.objects.filter(
         date=today, 
         status__in=['present', 'late']
@@ -106,7 +106,7 @@ def admin_dashboard(request):
     # Thống kê tổng quan từ Student model
     total_students = Student.objects.count()
     
-    today = timezone.now().date()
+    today = timezone.localdate()
     today_records = AttendanceRecord.objects.filter(date=today)
     
     # Đếm số sinh viên unique có mặt hôm nay (không đếm trùng)
@@ -125,6 +125,7 @@ def admin_dashboard(request):
         'recent_records': AttendanceRecord.objects.select_related('student').order_by('-date', '-time_in')[:20],
         'cameras': Camera.objects.all(),
         'students': Student.objects.all().order_by('-created_at'),  # Danh sách sinh viên
+        'classrooms': ClassRoom.objects.all().order_by('class_id'),
     }
     return render(request, 'portal/admin_dashboard.html', context)
 
@@ -169,7 +170,7 @@ def _open_today_sessions(today=None):
 
 def schedule_view(request):
     """Trang thời khóa biểu - Chọn buổi học để điểm danh"""
-    today = timezone.now().date()
+    today = timezone.localdate()
     current_day = today.weekday()  # 0 = Monday, khớp với DAY_CHOICES
 
     # Lấy tất cả thời khóa biểu
@@ -218,7 +219,7 @@ def schedule_view(request):
 def start_attendance_session(request, schedule_id):
     """Bắt đầu buổi điểm danh từ thời khóa biểu"""
     schedule = get_object_or_404(Schedule, id=schedule_id)
-    today = timezone.now().date()
+    today = timezone.localdate()
     
     # Tạo hoặc lấy buổi điểm danh cho hôm nay
     session, created = AttendanceSession.objects.get_or_create(
@@ -350,7 +351,7 @@ def video_feed_session(request, session_id):
 def api_stats(request):
     """API trả về thống kê realtime"""
     total_students = Student.objects.count()
-    today = timezone.now().date()
+    today = timezone.localdate()
     today_attendance = AttendanceRecord.objects.filter(
         date=today,
         status__in=['present', 'late']
@@ -400,8 +401,8 @@ def api_record_attendance(request):
             }, status=404)
         
         # Tạo bản ghi điểm danh
-        today = timezone.now().date()
-        current_time = timezone.now().time()
+        today = timezone.localdate()
+        current_time = timezone.localtime().time()
         
         record, created = AttendanceRecord.objects.get_or_create(
             student=student,
@@ -465,7 +466,7 @@ def api_attendance_today(request):
         except ValueError:
             return JsonResponse({'success': False, 'error': 'date must use YYYY-MM-DD'}, status=400)
     else:
-        today = timezone.now().date()
+        today = timezone.localdate()
     records = AttendanceRecord.objects.filter(date=today).select_related(
         'student', 'session__schedule__subject', 'session__schedule__classroom'
     )
@@ -751,11 +752,10 @@ def api_register_face(request):
             # Tự động thêm sinh viên vào ClassRoom nếu có class_name
             if class_name:
                 from .models import ClassRoom
-                try:
-                    classroom = ClassRoom.objects.get(class_id=class_name)
+                classroom = ClassRoom.objects.filter(class_id__iexact=class_name).first()
+                classroom = classroom or ClassRoom.objects.filter(name__iexact=class_name).first()
+                if classroom:
                     classroom.students.add(student)
-                except ClassRoom.DoesNotExist:
-                    pass  # Lớp không tồn tại thì bỏ qua
             
             return JsonResponse({
                 'success': True,
@@ -944,7 +944,7 @@ def api_recognize_face(request):
         
         # Nhận diện khuôn mặt qua InsightFace
         results = fr.recognize_frame(frame)
-        now = timezone.now()
+        now = timezone.localtime()
         today = now.date()
         current_time = now.time()
 
@@ -1095,7 +1095,7 @@ def api_schedules(request):
 @require_http_methods(["GET"])
 def api_sessions_today(request):
     """API lấy các buổi điểm danh hôm nay"""
-    today = timezone.now().date()
+    today = timezone.localdate()
     _open_today_sessions(today)
     sessions = AttendanceSession.objects.filter(date=today).select_related('schedule__subject', 'schedule__classroom')
     
@@ -1360,7 +1360,7 @@ def api_create_session(request):
             }, status=400)
         
         schedule = Schedule.objects.get(id=schedule_id)
-        date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else timezone.now().date()
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else timezone.localdate()
         
         session, created = AttendanceSession.objects.get_or_create(
             schedule=schedule,

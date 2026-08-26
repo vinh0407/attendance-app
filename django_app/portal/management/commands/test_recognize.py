@@ -73,7 +73,7 @@ class Command(BaseCommand):
         # Hiển thị kết quả điểm danh hôm nay
         self.stdout.write('\n' + '=' * 60)
         self.stdout.write('📊 ĐIỂM DANH HÔM NAY:')
-        today = timezone.now().date()
+        today = timezone.localdate()
         records = AttendanceRecord.objects.filter(date=today).select_related('student')
         if records.exists():
             for r in records:
