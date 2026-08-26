@@ -1,53 +1,49 @@
-# Máy điểm danh — Face Attendance Kiosk
+# UTH Face Attendance Kiosk
 
-Kiosk portrait 4:6 camera-first, dùng camera thật của trình duyệt và gọi API Django đang có sẵn trong `admin_check`.
+This directory contains the browser-based Attendance Kiosk. Django serves the Kiosk on the same origin as the attendance APIs.
 
-Màu xanh trong UI là `UI BLUE — PROVISIONAL`. Logo UTH được lấy từ `assets/uth-logo.png` do người dùng cung cấp.
+The canonical project documentation is available in the repository root at `README.md`.
 
-## Chạy
+## Operation
 
-1. Khởi động Django từ `C:\VisualStudio\App điểm danh\admin_check` (`python manage.py runserver`).
-2. Mở kiosk tại `http://127.0.0.1:8000/kiosk/?device_id=KIOSK-A203`. Kiosk đã được Django phục vụ cùng origin; không mở `index.html` bằng `file://`, vì trình duyệt sẽ chặn camera và API.
-3. Tạo/mở một `AttendanceSession` ở trạng thái `active` trong Management App. Kiosk tự tải buổi active đầu tiên trong `/api/sessions/today/`.
-4. Cấp quyền camera khi được hỏi.
+1. Start Django from the repository root.
+2. Open `http://127.0.0.1:8000/kiosk/` on the computer connected to the camera.
+3. Ensure that an active attendance session exists for the current day.
+4. Grant camera permission when the browser requests it.
+5. Keep one face inside the guide during each scan.
 
-Có thể đặt mã kiosk mà không sửa source bằng query string, ví dụ `?device_id=KIOSK-IT01-01` (giá trị này cũng được lưu trong giao diện hiện tại).
+The Kiosk selects the first active session returned by `/api/sessions/today/`. A specific session and device can be selected with query parameters:
 
-## API đã dùng
-
-- `GET /api/sessions/today/` — lấy buổi học thực tế trong ngày.
-- `POST /api/recognize-face/` — gửi frame camera cùng `session_id` (mã `SES-...`) và `device_id`; Django/InsightFace là nguồn nhận diện và ghi điểm danh.
-
-Response trả về cùng một attendance event cho kiosk, Management App và CSV: `attendance_id`, `late_minutes`, `attendance_code`, `attendance_label`, `attendance_periods`, `method` và `device_id`.
-
-## Nguồn dữ liệu dùng chung
-
-Kiosk, Management và Student Portal không có database riêng. Cả ba chạy cùng
-origin Django và đọc/ghi `admin_check/db.sqlite3` thông qua API. Kiosk chỉ gửi
-ảnh + `session_id` + `device_id`; Django nhận diện, phân loại thời gian và tạo
-một `AttendanceRecord`. Management, Portal và CSV export đọc lại chính bản ghi
-đó.
-
-CSV là đường backup/import, không phải realtime database. Đặt CSV vào:
-`APP/Máy điểm danh/inbox/`, sau đó chạy:
-
-```powershell
-cd "C:\VisualStudio\App điểm danh\admin_check"
-..\venv\Scripts\python.exe manage.py import_attendance_csv --archive
+```text
+http://127.0.0.1:8000/kiosk/?session_id=5&device_id=KIOSK-A203
 ```
 
-File hợp lệ được chuyển vào `processed/`, file có dòng lỗi vào `failed/`.
+The `session_id` query parameter currently uses the numeric Django session ID for the roster request. Attendance responses also contain the stable external identifier beginning with `SES-`.
 
-## Attendance timing
+## API Integration
 
-Timing is calculated on the server from the session's scheduled period start:
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/sessions/today/` | Load active sessions for the current date |
+| `GET` | `/api/session/<id>/roster/` | Load the expected class roster and attendance state |
+| `POST` | `/api/recognize-face/` | Submit a camera frame and record canonical attendance |
 
-- At or before the scheduled start: `PRESENT` / `ON TIME`.
-- 1–15 minutes late: `LATE — LEVEL 1`.
-- 16–59 minutes late: `LATE — 1 PERIOD`.
-- 60–120 minutes late: `ABSENT — 2 PERIODS`.
-- More than 120 minutes late: `ABSENT`.
+Requests include the `X-Kiosk-Key` header. The recognition request body contains:
 
-The status is stored in `AttendanceRecord.status`; the detailed label is stored in the existing `notes` field. No new attendance record is created when the student is scanned again in the same session.
+```json
+{
+  "image": "data:image/jpeg;base64,...",
+  "session_id": "SES-20260826-CV101-A203",
+  "device_id": "KIOSK-A203"
+}
+```
 
-Không có student, attendance, confidence hay trạng thái online giả trong UI. Khi chưa có buổi active, kiosk khóa quét và hiển thị lý do.
+The server performs recognition, class-membership validation, time classification, duplicate prevention, database persistence, and CSV archival. The Kiosk only displays the returned result.
+
+## Camera Security
+
+Modern browsers allow camera access on loopback addresses such as `127.0.0.1`. Camera access from another device through a private IP address normally requires HTTPS. Do not open `index.html` through `file://` because browser security rules will block the camera and same-origin API behavior.
+
+## Data Ownership
+
+The Kiosk does not maintain a separate attendance database. Django is the source of truth. The `inbox` directory is available only for optional CSV backup imports.

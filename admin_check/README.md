@@ -1,261 +1,53 @@
-# OpenCV AI Attendance System - Django
+# UTH Attendance Backend and Management Application
 
-Hệ thống điểm danh thông minh sử dụng nhận diện khuôn mặt với OpenCV và Django.
+This directory contains the Django backend, staff Management Application, shared data model, attendance services, import commands, and API endpoints for the UTH Attendance System.
 
-## Cấu trúc Project
+The canonical project documentation is available in the repository root at `README.md`.
 
-```
-attendance_system/
-├── manage.py                    # Django management script
-├── requirements.txt             # Python dependencies
-├── db.sqlite3                   # SQLite database (auto-generated)
-│
-├── attendance_system/           # Project configuration
-│   ├── __init__.py
-│   ├── settings.py              # Django settings
-│   ├── urls.py                  # Main URL configuration
-│   ├── asgi.py
-│   └── wsgi.py
-│
-├── portal/                      # Main application
-│   ├── __init__.py
-│   ├── admin.py                 # Admin configuration
-│   ├── apps.py
-│   ├── models.py                # Database models
-│   ├── views.py                 # Views & API endpoints
-│   └── urls.py                  # App URLs
-│
-├── templates/                   # HTML templates
-│   ├── base.html                # Base template
-│   └── portal/
-│       ├── home.html            # Main portal page
-│       ├── admin_dashboard.html # Admin dashboard
-│       ├── register.html        # Face registration page
-│       └── scan_placeholder.html # Placeholder cho plugin OpenCV
-│
-└── static/                      # Static files
-    ├── css/
-    │   └── styles.css           # Custom styles
-    └── js/
-        └── main.js              # Main JavaScript
+## Responsibilities
+
+- Staff authentication and management pages.
+- Student, class, subject, schedule, session, attendance, grade, and camera models.
+- Face registration and InsightFace inference.
+- Canonical attendance timing and duplicate prevention.
+- Wrong-class validation.
+- Automatic attendance CSV archival.
+- Session finalization and absent-record creation.
+- Student-scoped Portal APIs.
+- CSV import and export.
+
+## Development Commands
+
+Run these commands from the repository root after activating the virtual environment.
+
+```powershell
+$env:DJANGO_DEBUG = "1"
+python .\admin_check\manage.py migrate
+python .\admin_check\manage.py createsuperuser
+python .\admin_check\manage.py runserver 0.0.0.0:8000
 ```
 
-## Cài đặt & Chạy
+Run verification with:
 
-### 1. Tạo Virtual Environment
-```bash
-cd attendance_system
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# hoặc: venv\Scripts\activate  # Windows
+```powershell
+python .\admin_check\manage.py check
+python .\admin_check\manage.py test portal
 ```
 
-### 2. Cài đặt Dependencies
-```bash
-pip install -r requirements.txt
-```
+## Important Paths
 
-### 3. Migrate Database
-```bash
-python manage.py makemigrations
-python manage.py migrate
-```
+| Path | Purpose |
+| --- | --- |
+| `attendance_system/settings.py` | Django settings and environment-variable integration |
+| `attendance_system/urls.py` | Root URL configuration |
+| `portal/models.py` | Shared database schema |
+| `portal/views.py` | Management, Kiosk, Student Portal, and API views |
+| `portal/attendance_service.py` | Canonical attendance rules and event persistence |
+| `portal/attendance_archive.py` | Automatic date-and-subject CSV archive |
+| `portal/attendance_import.py` | CSV validation and import |
+| `portal/face_recognition.py` | InsightFace model, embedding storage, registration, and recognition |
+| `portal/management/commands` | Roster, grade, attendance, and face utilities |
 
-### 4. Tạo Superuser (Admin)
-```bash
-python manage.py createsuperuser
-```
+## Data Boundaries
 
-### 5. Chạy Server
-```bash
-python manage.py runserver
-```
-
-Truy cập: http://127.0.0.1:8000/
-
-### Dữ liệu dùng chung
-
-Ứng dụng đọc dữ liệu thật từ thư mục ở cấp dự án:
-
-* `APP/Dữ liệu/Sinh viên trường`: danh sách sinh viên dạng CSV, TSV hoặc JSON. Chạy `python manage.py import_students` để nhập đồng bộ, không tạo bản ghi giả.
-* `APP/Dữ liệu/Lịch sử điểm danh`: CSV lịch sử có thể nằm trong thư mục ngày/môn. Chạy `python manage.py import_attendance_history` để quét đệ quy.
-* `APP/Máy điểm danh/inbox`: CSV phát sinh realtime từ kiosk. Chạy `python manage.py import_attendance_csv --archive` để nhập và lưu file đã xử lý.
-
-CSV điểm danh phải có tối thiểu `attendance_id`, `session_id`, `student_id`, `date`, `scheduled_time`, `check_in_time`, `status`; các mã trễ/vắng được kiểm tra lại theo giờ học trung tâm.
-
-Trong Admin Dashboard, lớp có thể được tạo bằng `Add class`, môn học bằng `Add subject`, rồi gán môn vào lớp và khung giờ bằng `Assign subject to class`. Session đang mở có thể `Postpone`, và toàn bộ sinh viên/lớp/lịch/session/điểm danh được tải bằng `Export all CSV`. Endpoint tương ứng là `POST /api/classes/create/`, `POST /api/subjects/create/`, `POST /api/schedules/create/`, `POST /api/session/<id>/postpone/` và `GET /api/export/all.csv`.
-
-Attendance records are also archived automatically after each committed scan at
-`APP/Dữ liệu/Lịch sử điểm danh/DD_MM_YYYY/<subject>/attendance.csv`. Closing a
-session persists `ABSENT` rows for every roster member who was not scanned.
-Student face profiles are stored under `APP/Dữ liệu/Sinh viên trường/<Tên>_<Lớp>/`
-with `face.png` and `student.json`. The Student Portal exposes grades at
-`/api/student/me/grades/` and per-subject attendance/eligibility at
-`/api/student/me/subjects/summary/`; import grade CSV files with
-`python manage.py import_grades`.
-
-InsightFace is pinned to `1.0.1`. The backend selects `CUDAExecutionProvider`
-when CUDA is usable, `DmlExecutionProvider` on Windows when CUDA libraries are
-not available, and finally the CPU provider. The Admin face-registration panel
-shows the active provider so a deployment can verify which inference backend
-is running. On the current RTX 3050 laptop, DirectML is active because the
-installed NVIDIA driver exposes CUDA 11.6 while the newest CUDA runtime is
-not present.
-
-## URLs
-
-| URL | Mô tả |
-|-----|-------|
-| `/` | Trang chủ Portal |
-| `/admin-dashboard/` | Admin Dashboard |
-| `/register/` | Đăng ký khuôn mặt mới |
-| `/scan/camera/` | **Placeholder - Plugin OpenCV** |
-| `/admin/` | Django Admin |
-
-## API Endpoints
-
-### GET `/api/stats/`
-Lấy thống kê hệ thống realtime.
-
-**Response:**
-```json
-{
-    "success": true,
-    "data": {
-        "total_students": 1248,
-        "attendance_rate": 96.4,
-        "active_cameras": 8,
-        "avg_scan_time": 0.8,
-        "last_sync": "14:30:00"
-    }
-}
-```
-
-### POST `/api/record-attendance/`
-Ghi nhận điểm danh (dùng cho plugin OpenCV).
-
-**Request:**
-```json
-{
-    "student_id": "SV001",
-    "confidence": 98.5,
-    "camera_id": "CAM01"
-}
-```
-
-**Response:**
-```json
-{
-    "success": true,
-    "message": "Attendance recorded",
-    "data": {
-        "student_name": "Nguyen Van A",
-        "student_id": "SV001",
-        "time": "14:30:45",
-        "status": "present",
-        "created": true
-    }
-}
-```
-
-### GET `/api/students/`
-Lấy danh sách sinh viên.
-
-### GET `/api/attendance/today/`
-Lấy danh sách điểm danh hôm nay.
-
-## Tích hợp Plugin OpenCV
-
-### Cách 1: Thay đổi view `scan_camera`
-
-Chỉnh sửa file `portal/views.py`:
-
-```python
-def scan_camera(request):
-    # Thêm logic OpenCV của anh vào đây
-    # ...
-    return render(request, 'portal/your_opencv_template.html', context)
-```
-
-### Cách 2: Tạo app riêng cho OpenCV
-
-```bash
-python manage.py startapp opencv_plugin
-```
-
-Sau đó thêm vào `INSTALLED_APPS` trong `settings.py`.
-
-### Cách 3: Redirect tới URL khác
-
-Trong `settings.py`, thay đổi:
-```python
-OPENCV_PLUGIN_URL = 'http://localhost:5000/camera'  # URL tới plugin riêng
-```
-
-## Cấu hình
-
-Các URL có thể cấu hình trong `attendance_system/settings.py`:
-
-```python
-# OpenCV Plugin Configuration
-OPENCV_PLUGIN_URL = '/scan/camera/'      # URL plugin OpenCV
-ADMIN_DASHBOARD_URL = '/admin-dashboard/'
-REGISTER_FACE_URL = '/register/'
-```
-
-## Models
-
-### Student
-- `student_id`: Mã sinh viên (unique)
-- `full_name`: Họ tên
-- `email`: Email
-- `class_name`: Lớp
-- `face_encoding`: Face encoding data (binary)
-- `face_image`: Ảnh khuôn mặt
-- `is_registered`: Đã đăng ký khuôn mặt chưa
-
-### AttendanceRecord
-- `student`: FK tới Student
-- `date`: Ngày điểm danh
-- `time_in`: Giờ vào
-- `time_out`: Giờ ra
-- `status`: present/late/absent
-- `confidence`: Độ tin cậy nhận diện
-- `camera_id`: ID camera
-
-### Camera
-- `camera_id`: ID camera
-- `name`: Tên
-- `location`: Vị trí
-- `ip_address`: Địa chỉ IP
-- `status`: active/inactive/maintenance
-
-## Development
-
-### Thêm dữ liệu mẫu
-```bash
-python manage.py shell
-```
-
-```python
-from portal.models import Student, Camera
-
-# Thêm sinh viên
-Student.objects.create(
-    student_id='SV001',
-    full_name='Nguyen Van A',
-    class_name='CS101'
-)
-
-# Thêm camera
-Camera.objects.create(
-    camera_id='CAM01',
-    name='Camera Lớp 101',
-    location='Phòng 101',
-    status='active'
-)
-```
-
-## License
-MIT License
-# nhan-dien-khuonmat-website
+The Django database, media directory, student data, attendance history, face embeddings, and environment files are excluded from Git. Do not add real student or biometric data to source control.
