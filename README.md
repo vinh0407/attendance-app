@@ -2,6 +2,8 @@
 
 UTH Attendance System is a unified face-recognition attendance platform designed for classroom use on a local university network. The repository contains an attendance kiosk, a staff management application, and a student portal. All three surfaces use the same Django backend, database, attendance rules, and CSV archive.
 
+All project documentation is consolidated in this file so that setup, architecture, operation, testing, security, and deployment guidance remain consistent.
+
 The current implementation is suitable for development, demonstrations, and controlled local-network testing. It is not yet a production deployment package. Review the security and deployment sections before using real student or biometric data.
 
 ## System Overview
@@ -204,9 +206,7 @@ attendance-app/
 |   |-- Portal/                   Student Portal frontend
 |   `-- Dữ liệu/                  Local roster, grade, face, and attendance data
 |-- .gitignore                    Private-data and runtime exclusions
-|-- PRODUCT.md                    Product constraints and operating context
-|-- DESIGN.md                     Shared visual direction
-`-- README.md                     Canonical project documentation
+`-- README.md                     Complete project documentation
 ```
 
 ## Requirements
