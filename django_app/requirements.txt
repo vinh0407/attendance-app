@@ -16,8 +16,11 @@ python-dotenv>=1.0.0
 # OpenCV & InsightFace (Face Recognition)
 opencv-python>=4.8.0
 numpy>=1.24.0
-insightface>=0.7.3
-onnxruntime-gpu>=1.16.0
+insightface==1.0.1
+# CPU backend (works on every deployment machine).
+onnxruntime>=1.18.0
+# Optional GPU backend: install this instead of onnxruntime when CUDA is available.
+# onnxruntime-gpu>=1.18.0
 
 # Optional - Production
 # waitress>=3.0.0

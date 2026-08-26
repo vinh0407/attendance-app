@@ -83,7 +83,7 @@ Truy cập: http://127.0.0.1:8000/
 
 CSV điểm danh phải có tối thiểu `attendance_id`, `session_id`, `student_id`, `date`, `scheduled_time`, `check_in_time`, `status`; các mã trễ/vắng được kiểm tra lại theo giờ học trung tâm.
 
-Trong Admin Dashboard, lớp có thể được tạo bằng `Add class`, session đang mở có thể `Postpone`, và toàn bộ sinh viên/lớp/lịch/session/điểm danh được tải bằng `Export all CSV`. Endpoint tương ứng là `POST /api/classes/create/`, `POST /api/session/<id>/postpone/` và `GET /api/export/all.csv`.
+Trong Admin Dashboard, lớp có thể được tạo bằng `Add class`, môn học bằng `Add subject`, rồi gán môn vào lớp và khung giờ bằng `Assign subject to class`. Session đang mở có thể `Postpone`, và toàn bộ sinh viên/lớp/lịch/session/điểm danh được tải bằng `Export all CSV`. Endpoint tương ứng là `POST /api/classes/create/`, `POST /api/subjects/create/`, `POST /api/schedules/create/`, `POST /api/session/<id>/postpone/` và `GET /api/export/all.csv`.
 
 Attendance records are also archived automatically after each committed scan at
 `APP/Dữ liệu/Lịch sử điểm danh/DD_MM_YYYY/<subject>/attendance.csv`. Closing a
@@ -93,6 +93,11 @@ with `face.png` and `student.json`. The Student Portal exposes grades at
 `/api/student/me/grades/` and per-subject attendance/eligibility at
 `/api/student/me/subjects/summary/`; import grade CSV files with
 `python manage.py import_grades`.
+
+InsightFace is pinned to `1.0.1`. The backend selects `CUDAExecutionProvider`
+when `onnxruntime-gpu` is installed and available, otherwise it uses the CPU
+`onnxruntime` backend. The Admin face-registration panel shows the active
+provider so a deployment can verify which inference backend is running.
 
 ## URLs
 

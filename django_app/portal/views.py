@@ -1429,6 +1429,84 @@ def api_create_class(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def api_create_subject(request):
+    """Create or update a subject from the Admin scheduling workspace."""
+    try:
+        data = json.loads(request.body or '{}')
+        code = str(data.get('code') or '').strip().upper()
+        name = str(data.get('name') or '').strip()
+        if not code or not name:
+            return JsonResponse({'success': False, 'error': 'Subject code and name are required'}, status=400)
+        try:
+            credits = int(data.get('credits') or 3)
+        except (TypeError, ValueError):
+            return JsonResponse({'success': False, 'error': 'Credits must be a number'}, status=400)
+        if credits < 1 or credits > 20:
+            return JsonResponse({'success': False, 'error': 'Credits must be between 1 and 20'}, status=400)
+        subject, created = Subject.objects.get_or_create(
+            code=code,
+            defaults={'name': name, 'teacher': str(data.get('teacher') or '').strip(), 'credits': credits},
+        )
+        if not created:
+            subject.name = name
+            subject.teacher = str(data.get('teacher') or '').strip()
+            subject.credits = credits
+            subject.save(update_fields=['name', 'teacher', 'credits'])
+        return JsonResponse({'success': True, 'created': created, 'data': {
+            'id': subject.id, 'code': subject.code, 'name': subject.name,
+            'teacher': subject.teacher, 'credits': subject.credits,
+        }}, status=201 if created else 200)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_create_schedule(request):
+    """Attach a subject to a class and create/update its weekly schedule."""
+    try:
+        data = json.loads(request.body or '{}')
+        subject_id = data.get('subject_id')
+        classroom_id = data.get('classroom_id')
+        if not subject_id or not classroom_id:
+            return JsonResponse({'success': False, 'error': 'Subject and class are required'}, status=400)
+        subject = Subject.objects.get(id=int(subject_id))
+        classroom = ClassRoom.objects.get(id=int(classroom_id))
+        day_of_week = int(data.get('day_of_week'))
+        start_period = int(data.get('start_period'))
+        end_period = int(data.get('end_period'))
+        if day_of_week not in range(7):
+            raise ValueError('Day of week must be between 0 and 6')
+        if start_period not in range(1, 11) or end_period not in range(1, 11) or end_period < start_period:
+            raise ValueError('Invalid teaching periods')
+        schedule, created = Schedule.objects.get_or_create(
+            subject=subject,
+            classroom=classroom,
+            day_of_week=day_of_week,
+            start_period=start_period,
+            end_period=end_period,
+            defaults={'room': str(data.get('room') or '').strip(), 'is_active': True},
+        )
+        if not created:
+            schedule.room = str(data.get('room') or '').strip()
+            schedule.is_active = True
+            schedule.save(update_fields=['room', 'is_active'])
+        return JsonResponse({'success': True, 'created': created, 'data': {
+            'id': schedule.id, 'subject_id': subject.id, 'subject': subject.name,
+            'classroom_id': classroom.id, 'classroom': classroom.name,
+            'day_of_week': schedule.day_of_week, 'start_period': schedule.start_period,
+            'end_period': schedule.end_period, 'room': schedule.room,
+        }}, status=201 if created else 200)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    except (Subject.DoesNotExist, ClassRoom.DoesNotExist):
+        return JsonResponse({'success': False, 'error': 'Subject or class not found'}, status=404)
+    except (TypeError, ValueError):
+        return JsonResponse({'success': False, 'error': 'Invalid subject, class, or period values'}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def api_postpone_session(request, session_id):
     """Postpone a session without deleting its attendance history."""
     session = get_object_or_404(AttendanceSession, id=session_id)

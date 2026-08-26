@@ -43,6 +43,8 @@ urlpatterns = [
     path('api/session/record/', views.api_record_session_attendance, name='api_record_session_attendance'),
     path('api/session/create/', views.api_create_session, name='api_create_session'),
     path('api/classes/create/', views.api_create_class, name='api_create_class'),
+    path('api/subjects/create/', views.api_create_subject, name='api_create_subject'),
+    path('api/schedules/create/', views.api_create_schedule, name='api_create_schedule'),
     path('api/session/<int:session_id>/postpone/', views.api_postpone_session, name='api_postpone_session'),
     path('api/export/all.csv', views.api_export_all_csv, name='api_export_all_csv'),
 

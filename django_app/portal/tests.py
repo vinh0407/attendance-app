@@ -102,6 +102,20 @@ class AttendanceCsvIntegrationTests(TestCase):
         self.assertEqual(self.session.postponed_to, datetime.date(2026, 8, 30))
         self.assertTrue(AttendanceSession.objects.filter(schedule=self.session.schedule, date=datetime.date(2026, 8, 30), status='scheduled').exists())
 
+    def test_admin_can_create_subject_and_assign_it_to_class(self):
+        client = Client()
+        response = client.post('/api/subjects/create/', data=json.dumps({
+            'code': 'NEW101', 'name': 'New subject', 'teacher': 'Lecturer', 'credits': 3,
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        subject_id = response.json()['data']['id']
+        response = client.post('/api/schedules/create/', data=json.dumps({
+            'subject_id': subject_id, 'classroom_id': self.session.schedule.classroom_id,
+            'day_of_week': 4, 'start_period': 3, 'end_period': 4, 'room': 'B204',
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Schedule.objects.filter(subject_id=subject_id, classroom_id=self.session.schedule.classroom_id).exists())
+
     def test_export_all_csv_has_consistent_rows(self):
         response = Client().get('/api/export/all.csv')
         self.assertEqual(response.status_code, 200)

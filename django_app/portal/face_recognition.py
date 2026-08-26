@@ -10,6 +10,7 @@ import os
 import json
 import re
 import warnings
+import importlib.metadata
 from django.conf import settings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -38,11 +39,31 @@ def face_engine_status():
             'message': 'Thiếu InsightFace trong môi trường chạy Django.',
             'detail': str(exc),
         }
+    try:
+        import onnxruntime as ort
+        providers = ort.get_available_providers()
+    except Exception:
+        providers = []
     return {
         'available': True,
         'code': 'READY',
         'message': 'Bộ nhận diện khuôn mặt sẵn sàng.',
+        'provider': 'CUDAExecutionProvider' if 'CUDAExecutionProvider' in providers else 'CPUExecutionProvider',
+        'insightface_version': importlib.metadata.version('insightface'),
+        'onnxruntime_version': importlib.metadata.version('onnxruntime') if 'onnxruntime' in importlib.metadata.packages_distributions() else None,
     }
+
+
+def _inference_providers():
+    """Select CUDA when the installed ONNX Runtime exposes it, otherwise CPU."""
+    try:
+        import onnxruntime as ort
+        available = ort.get_available_providers()
+    except Exception:
+        available = []
+    if 'CUDAExecutionProvider' in available:
+        return ['CUDAExecutionProvider', 'CPUExecutionProvider'], 0
+    return ['CPUExecutionProvider'], -1
 
 def get_face_app():
     """Lấy instance FaceAnalysis (singleton để tránh load model nhiều lần)"""
@@ -54,13 +75,10 @@ def get_face_app():
             raise RuntimeError(
                 "InsightFace chưa sẵn sàng. Hãy cài lại insightface và các dependency AI trước khi mở camera."
             ) from exc
-        print("Đang tải model InsightFace...")
-        try:
-            _face_app = FaceAnalysis(name=MODEL_NAME, providers=['CUDAExecutionProvider'])
-        except:
-            print("Không tìm thấy GPU, sử dụng CPU...")
-            _face_app = FaceAnalysis(name=MODEL_NAME, providers=['CPUExecutionProvider'])
-        _face_app.prepare(ctx_id=0, det_size=(640, 640))
+        providers, ctx_id = _inference_providers()
+        print(f"Đang tải model InsightFace ({providers[0]})...")
+        _face_app = FaceAnalysis(name=MODEL_NAME, providers=providers)
+        _face_app.prepare(ctx_id=ctx_id, det_size=(640, 640))
         print("Tải model thành công!")
     return _face_app
 
