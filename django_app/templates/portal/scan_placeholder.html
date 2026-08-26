@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scan Camera - OpenCV Plugin{% endblock %}
+
+{% block content %}
+<!-- Ambient Background Blobs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute top-0 -left-40 w-[600px] h-[600px] bg-primary/20 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-blob"></div>
+    <div class="absolute top-0 -right-40 w-[500px] h-[500px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-60 animate-blob delay-200"></div>
+</div>
+
+<!-- Main Content -->
+<main class="relative z-10 flex flex-1 items-center justify-center p-4 min-h-screen">
+    <div class="glass-card w-full max-w-2xl p-8 rounded-3xl text-center">
+        <!-- Header -->
+        <div class="flex items-center justify-center gap-3 mb-8">
+            <span class="material-symbols-outlined text-primary text-4xl">videocam</span>
+            <h1 class="text-3xl font-bold">Plugin Camera OpenCV</h1>
+        </div>
+
+        <!-- Placeholder Area -->
+        <div class="bg-slate-800/50 rounded-2xl p-12 mb-8 border-2 border-dashed border-slate-600">
+            <div class="face-scan-container mx-auto mb-6">
+                <div class="face-scan-ring"></div>
+                <div class="face-scan-ring"></div>
+                <div class="face-scan-ring"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-6xl text-slate-500">camera</span>
+                </div>
+            </div>
+            
+            <h2 class="text-xl font-semibold mb-4 text-slate-300">Plugin Placeholder</h2>
+            <p class="text-slate-400 mb-6">
+                {{ message|default:"Đây là nơi anh sẽ tích hợp plugin OpenCV." }}<br>
+                Thay thế template này hoặc view <code class="bg-slate-700 px-2 py-1 rounded">scan_camera</code> trong <code class="bg-slate-700 px-2 py-1 rounded">views.py</code>
+            </p>
+            
+            <div class="bg-slate-900/50 rounded-xl p-4 text-left text-sm font-mono text-slate-400">
+                <p class="text-green-400"># Hướng dẫn tích hợp:</p>
+                <p>1. Tạo view mới trong portal/views.py</p>
+                <p>2. Hoặc tạo app riêng cho OpenCV plugin</p>
+                <p>3. Sử dụng API endpoint để ghi nhận điểm danh:</p>
+                <p class="text-primary ml-4">POST /api/record-attendance/</p>
+                <p class="text-slate-500 ml-4">{"student_id": "SV001", "confidence": 98.5}</p>
+            </div>
+        </div>
+
+        <!-- API Info -->
+        <div class="glass-card rounded-xl p-6 mb-8 text-left">
+            <h3 class="font-semibold mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">api</span>
+                Các API Endpoint Có Sẵn
+            </h3>
+            <div class="space-y-3 text-sm">
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-bold">POST</span>
+                    <code class="text-slate-300">/api/record-attendance/</code>
+                    <span class="text-slate-500">- Ghi nhận điểm danh</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold">GET</span>
+                    <code class="text-slate-300">/api/stats/</code>
+                    <span class="text-slate-500">- Lấy thống kê</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold">GET</span>
+                    <code class="text-slate-300">/api/students/</code>
+                    <span class="text-slate-500">- Danh sách sinh viên</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold">GET</span>
+                    <code class="text-slate-300">/api/attendance/today/</code>
+                    <span class="text-slate-500">- Điểm danh hôm nay</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <a href="{% url 'portal:home' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Quay lại Trang chủ
+        </a>
+    </div>
+</main>
+{% endblock %}

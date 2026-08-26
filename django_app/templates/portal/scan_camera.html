@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Điểm Danh - Face Recognition{% endblock %}
+
+{% block content %}
+<!-- Ambient Background Blobs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute top-0 -left-40 w-[600px] h-[600px] bg-primary/20 rounded-full mix-blend-screen filter blur-[100px] opacity-70 animate-blob"></div>
+    <div class="absolute top-0 -right-40 w-[500px] h-[500px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-60 animate-blob delay-200"></div>
+</div>
+
+<!-- Main Content -->
+<main class="relative z-10 flex flex-1 p-4 min-h-screen">
+    <div class="container mx-auto max-w-7xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-4xl">face</span>
+                <div>
+                    <h1 class="text-3xl font-bold">Điểm Danh Bằng Khuôn Mặt (Web Client)</h1>
+                    <p class="text-slate-400 text-sm">Camera mở trực tiếp trên thiết bị của bạn • Xử lý AI trên GPU Server</p>
+                </div>
+            </div>
+            <a href="{% url 'portal:home' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Trang chủ
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Camera Feed -->
+            <div class="lg:col-span-2">
+                <div class="glass-card rounded-3xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="relative flex h-3 w-3">
+                                <span id="status-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span id="status-dot" class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                            </span>
+                            <span id="camera-status-text" class="text-green-400 font-medium">Đang kết nối camera...</span>
+                        </div>
+                        <span id="fps-counter" class="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded-lg border border-white/5">
+                            AI Ping: -- ms
+                        </span>
+                    </div>
+                    
+                    <!-- Video Stream & Overlay Canvas -->
+                    <div class="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center border border-white/10 shadow-2xl">
+                        <video id="webcam" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                        <canvas id="overlay-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+                        <canvas id="capture-canvas" class="hidden"></canvas>
+                        
+                        <!-- Overlay Info -->
+                        <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md rounded-lg px-3 py-2 text-sm border border-white/10 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-sm">memory</span>
+                            <span class="text-slate-300">InsightFace Model:</span>
+                            <span class="text-emerald-400 font-semibold">buffalo_l</span>
+                        </div>
+
+                        <!-- Recognition Toast Popups inside Camera -->
+                        <div id="detection-toast" class="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-slate-900/90 border border-green-500/40 text-white text-sm font-medium opacity-0 transition-opacity duration-300 flex items-center gap-2 shadow-lg backdrop-blur-md">
+                            <span class="material-symbols-outlined text-green-400 text-base">verified</span>
+                            <span id="detection-toast-msg">Đã nhận diện: --</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Controls -->
+                    <div class="flex flex-wrap gap-4 mt-4">
+                        <button id="btn-toggle-cam" onclick="toggleCamera()" class="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-3 bg-primary hover:bg-primary/80 rounded-xl font-medium transition-colors">
+                            <span class="material-symbols-outlined">videocam_off</span>
+                            <span id="btn-toggle-text">Tắt Camera</span>
+                        </button>
+                        <button id="btn-switch-cam" onclick="switchCamera()" class="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-medium transition-colors">
+                            <span class="material-symbols-outlined">flip_camera_ios</span>
+                            Đổi Camera
+                        </button>
+                        <button onclick="loadAttendance()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors">
+                            <span class="material-symbols-outlined">refresh</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar - Attendance Log -->
+            <div class="lg:col-span-1">
+                <div class="glass-card rounded-3xl p-6 h-full flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary">checklist</span>
+                                Đã điểm danh hôm nay
+                            </h2>
+                            <button onclick="loadAttendance()" class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                                <span class="material-symbols-outlined">sync</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Attendance List -->
+                        <div id="attendance-list" class="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                            <!-- Will be populated by JavaScript -->
+                            <div class="text-center text-slate-400 py-8">
+                                <span class="material-symbols-outlined text-4xl mb-2 animate-spin">progress_activity</span>
+                                <p>Đang tải dữ liệu...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="mt-6 pt-4 border-t border-slate-700/60">
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div class="bg-green-500/15 border border-green-500/20 rounded-xl p-3">
+                                <div id="count-present" class="text-2xl font-bold text-green-400">0</div>
+                                <div class="text-sm text-slate-400">Có mặt</div>
+                            </div>
+                            <div class="bg-yellow-500/15 border border-yellow-500/20 rounded-xl p-3">
+                                <div id="count-late" class="text-2xl font-bold text-yellow-400">0</div>
+                                <div class="text-sm text-slate-400">Đi muộn</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registered Faces -->
+                <div class="glass-card rounded-3xl p-6 mt-6">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-4">
+                        <span class="material-symbols-outlined text-primary">group</span>
+                        Khuôn mặt đã đăng ký
+                    </h2>
+                    <div id="registered-faces" class="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+let currentStream = null;
+let isScanning = false;
+let scanInterval = null;
+let currentFacingMode = 'user'; // 'user' or 'environment'
+const SCAN_INTERVAL_MS = 650; // Scan frame every 650ms
+
+const video = document.getElementById('webcam');
+const overlayCanvas = document.getElementById('overlay-canvas');
+const captureCanvas = document.getElementById('capture-canvas');
+const overlayCtx = overlayCanvas.getContext('2d');
+const captureCtx = captureCanvas.getContext('2d');
+
+// Sound synthesis for successful check-in
+function playSuccessBeep() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    } catch(e) {}
+}
+
+// Start Camera Stream
+async function startCamera() {
+    try {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+
+        const constraints = {
+            video: {
+                facingMode: currentFacingMode,
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        currentStream = stream;
+        video.srcObject = stream;
+
+        video.onloadedmetadata = () => {
+            video.play();
+            updateCanvasSize();
+            document.getElementById('camera-status-text').textContent = 'Camera đang hoạt động';
+            document.getElementById('status-ping').className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75';
+            document.getElementById('status-dot').className = 'relative inline-flex rounded-full h-3 w-3 bg-green-500';
+            startScanning();
+        };
+    } catch (err) {
+        console.error('Lỗi mở camera:', err);
+        document.getElementById('camera-status-text').textContent = 'Không thể mở camera: ' + (err.message || 'Quyền bị từ chối');
+        document.getElementById('status-ping').className = 'hidden';
+        document.getElementById('status-dot').className = 'relative inline-flex rounded-full h-3 w-3 bg-red-500';
+    }
+}
+
+function updateCanvasSize() {
+    if (video.videoWidth && video.videoHeight) {
+        overlayCanvas.width = video.videoWidth;
+        overlayCanvas.height = video.videoHeight;
+        captureCanvas.width = 640;
+        captureCanvas.height = Math.round((video.videoHeight / video.videoWidth) * 640);
+    }
+}
+
+window.addEventListener('resize', updateCanvasSize);
+
+// Toggle Camera On/Off
+function toggleCamera() {
+    if (currentStream && currentStream.active) {
+        currentStream.getTracks().forEach(track => track.stop());
+        stopScanning();
+        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+        document.getElementById('camera-status-text').textContent = 'Camera đã tắt';
+        document.getElementById('btn-toggle-text').textContent = 'Bật Camera';
+        document.getElementById('btn-toggle-cam').classList.replace('bg-primary', 'bg-green-600');
+        document.getElementById('status-dot').className = 'relative inline-flex rounded-full h-3 w-3 bg-slate-500';
+        document.getElementById('status-ping').className = 'hidden';
+    } else {
+        startCamera();
+        document.getElementById('btn-toggle-text').textContent = 'Tắt Camera';
+        document.getElementById('btn-toggle-cam').classList.replace('bg-green-600', 'bg-primary');
+    }
+}
+
+// Switch Camera Front/Back
+function switchCamera() {
+    currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+    startCamera();
+}
+
+// Start periodic AI scanning
+function startScanning() {
+    if (scanInterval) clearInterval(scanInterval);
+    isScanning = true;
+    scanInterval = setInterval(sendFrameForRecognition, SCAN_INTERVAL_MS);
+}
+
+function stopScanning() {
+    isScanning = false;
+    if (scanInterval) clearInterval(scanInterval);
+}
+
+let isSending = false;
+
+// Capture snapshot and send to Django AI Server
+async function sendFrameForRecognition() {
+    if (!video || video.paused || video.ended || !video.videoWidth || isSending) return;
+
+    try {
+        isSending = true;
+        const startTime = performance.now();
+
+        // Draw current video frame to capture canvas (scaled down for fast network transmission)
+        captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+        const base64Image = captureCanvas.toDataURL('image/jpeg', 0.7);
+
+        const response = await fetch('/api/recognize-face/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image: base64Image })
+        });
+
+        const result = await response.json();
+        const endTime = performance.now();
+        document.getElementById('fps-counter').textContent = `AI Ping: ${Math.round(endTime - startTime)} ms`;
+
+        if (result.success && result.data) {
+            drawDetections(result.data.recognized || []);
+        }
+    } catch (err) {
+        console.error('Lỗi nhận diện:', err);
+    } finally {
+        isSending = false;
+    }
+}
+
+// Draw Bounding Boxes on Overlay Canvas
+function drawDetections(faces) {
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+    if (!faces || faces.length === 0) return;
+
+    // Calculate scale factor between original video and capture canvas
+    const scaleX = overlayCanvas.width / captureCanvas.width;
+    const scaleY = overlayCanvas.height / captureCanvas.height;
+
+    faces.forEach(face => {
+        if (!face.bbox || face.bbox.length < 4) return;
+
+        const [x1, y1, x2, y2] = face.bbox.map((v, i) => i % 2 === 0 ? v * scaleX : v * scaleY);
+        const width = x2 - x1;
+        const height = y2 - y1;
+
+        const isKnown = face.name && face.name !== 'Unknown';
+        const strokeColor = isKnown ? '#10B981' : '#EF4444'; // Green if known, Red if unknown
+
+        // Draw bounding box
+        overlayCtx.lineWidth = 3;
+        overlayCtx.strokeStyle = strokeColor;
+        overlayCtx.strokeRect(x1, y1, width, height);
+
+        // Draw label background
+        const labelText = isKnown ? `${face.name} (${face.confidence}%)` : `Chưa nhận diện (${face.confidence}%)`;
+        overlayCtx.font = 'bold 16px Inter, sans-serif';
+        const textWidth = overlayCtx.measureText(labelText).width;
+
+        overlayCtx.fillStyle = strokeColor;
+        overlayCtx.fillRect(x1, Math.max(0, y1 - 28), textWidth + 16, 28);
+
+        // Draw label text
+        overlayCtx.fillStyle = '#FFFFFF';
+        overlayCtx.fillText(labelText, x1 + 8, Math.max(20, y1 - 8));
+
+        // If new attendance recorded, trigger sound and toast
+        if (face.is_new_attendance) {
+            playSuccessBeep();
+            showToast(`Điểm danh thành công: ${face.name}!`);
+            loadAttendance();
+        }
+    });
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('detection-toast');
+    const toastMsg = document.getElementById('detection-toast-msg');
+    toastMsg.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast.timeout);
+    toast.timeout = setTimeout(() => {
+        toast.style.opacity = '0';
+    }, 3000);
+}
+
+// Load attendance records
+async function loadAttendance() {
+    try {
+        const response = await fetch('/api/attendance/today/');
+        const data = await response.json();
+        
+        if (data.success) {
+            const list = document.getElementById('attendance-list');
+            let presentCount = 0;
+            let lateCount = 0;
+            
+            if (!data.data || data.data.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center text-slate-400 py-8">
+                        <span class="material-symbols-outlined text-4xl mb-2">person_off</span>
+                        <p>Chưa có ai điểm danh hôm nay</p>
+                    </div>
+                `;
+            } else {
+                list.innerHTML = data.data.map(record => {
+                    if (record.status === 'present') presentCount++;
+                    if (record.status === 'late') lateCount++;
+                    
+                    const statusColor = record.status === 'present' ? 'green' : 'yellow';
+                    const statusText = record.status === 'present' ? 'Có mặt' : 'Đi muộn';
+                    
+                    return `
+                        <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-white/5 hover:border-primary/20 transition-all">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-xl">person</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-white">${record.student_name}</div>
+                                    <div class="text-xs text-slate-400">${record.student_id || ''} • ${record.time_in || '--:--'}</div>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 bg-${statusColor}-500/20 text-${statusColor}-400 rounded-lg text-xs font-semibold">
+                                ${statusText}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('count-present').textContent = presentCount;
+            document.getElementById('count-late').textContent = lateCount;
+        }
+    } catch (error) {
+        console.error('Error loading attendance:', error);
+    }
+}
+
+// Load registered faces
+async function loadRegisteredFaces() {
+    try {
+        const response = await fetch('/api/registered-faces/');
+        const data = await response.json();
+        
+        if (data.success) {
+            const container = document.getElementById('registered-faces');
+            
+            if (!data.data || data.data.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-sm">Chưa có khuôn mặt nào</p>';
+            } else {
+                container.innerHTML = data.data.map(face => `
+                    <div class="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl border border-white/5">
+                        <span class="font-medium text-sm text-slate-200">${face.name}</span>
+                        <span class="text-xs text-slate-400">${face.embeddings_count} ảnh</span>
+                    </div>
+                `).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading registered faces:', error);
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    startCamera();
+    loadAttendance();
+    loadRegisteredFaces();
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0759A5" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="description" content="Cổng thông tin sinh viên UTH — lịch học, điểm số và điểm danh." />
+    <title>UTH Student Portal</title>
+    <link rel="icon" type="image/png" href="assets/uth-logo.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="drawer.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar" aria-label="Điều hướng chính">
+        <div class="brand-block">
+          <img src="assets/uth-logo.png" alt="Logo Trường Đại học Giao thông vận tải TP.HCM" class="brand-logo" />
+          <div><strong>UTH</strong><span>Student Portal</span></div>
+        </div>
+        <div class="sidebar-rule"></div>
+        <nav class="side-nav">
+          <p class="nav-label">Không gian học tập</p>
+          <a class="nav-item is-active" href="#home" data-route="home" aria-current="page"><span class="nav-icon">⌂</span><span>Trang chủ</span></a>
+          <a class="nav-item" href="#schedule" data-route="schedule"><span class="nav-icon">▦</span><span>Lịch học</span></a>
+          <a class="nav-item" href="#grades" data-route="grades"><span class="nav-icon">∿</span><span>Điểm số</span></a>
+          <a class="nav-item" href="#attendance" data-route="attendance"><span class="nav-icon">✓</span><span>Điểm danh</span></a>
+          <a class="nav-item" href="#subjects" data-route="subjects"><span class="nav-icon">□</span><span>Môn học</span></a>
+          <p class="nav-label nav-label-spaced">Kết nối</p>
+          <a class="nav-item" href="#forum" data-route="forum"><span class="nav-icon">◌</span><span>Diễn đàn</span></a>
+          <a class="nav-item" href="#messages" data-route="messages"><span class="nav-icon">▱</span><span>Tin nhắn</span><span class="nav-count">[BACKEND REQUIRED]</span></a>
+          <a class="nav-item" href="#notifications" data-route="notifications"><span class="nav-icon">!</span><span>Thông báo</span></a>
+        </nav>
+        <div class="sidebar-bottom">
+          <a class="profile-link" href="#profile" data-route="profile"><span class="avatar avatar-small">—</span><span><strong>Hồ sơ cá nhân</strong><small>Quản lý thông tin</small></span></a>
+          <button class="theme-button" type="button" id="themeToggle" aria-pressed="false"><span>◐</span> Chế độ hiển thị <b>Light</b></button>
+        </div>
+      </aside>
+      <button class="drawer-scrim" id="drawerScrim" type="button" aria-label="Đóng điều hướng" hidden></button>
+
+      <main id="main-content" class="main-content">
+        <header class="topbar">
+          <button class="menu-button" id="menuToggle" type="button" aria-label="Mở điều hướng" aria-expanded="false" aria-controls="sidebar">☰</button>
+          <div class="breadcrumb"><span>UTH Student Portal</span><span aria-hidden="true">/</span><strong id="pageLabel">Trang chủ</strong></div>
+          <div class="topbar-actions"><button class="icon-button" type="button" aria-label="Tìm kiếm" id="searchButton">⌕</button><button class="avatar" type="button" aria-label="Mở hồ sơ">—</button></div>
+        </header>
+
+        <div class="page-wrap" id="page-home">
+          <section class="welcome-row page-enter">
+            <div><p class="section-kicker" id="todayDate">HÔM NAY</p><h1>Hôm nay của bạn</h1><p class="subhead">Lịch học và điểm danh được lấy trực tiếp từ hệ thống UTH.</p></div>
+            <div class="identity-placeholder"><span class="avatar avatar-large" id="profileInitial">—</span><div><strong id="profileName">Đang tải hồ sơ</strong><span id="profileMeta">Đang kết nối dữ liệu sinh viên</span></div></div>
+          </section>
+
+          <section class="notice-bar" aria-label="Trạng thái dữ liệu"><span class="status-dot" id="portalStatusDot"></span><div><strong id="portalStatusTitle">Đang đồng bộ dữ liệu</strong><p id="portalStatusCopy">Đang tải thông tin cá nhân, lịch học và điểm danh.</p></div><span class="backend-tag" id="portalStatusTag">SYNCING</span></section>
+
+          <div class="content-grid">
+            <div class="primary-column">
+              <section class="section-block" aria-labelledby="today-title">
+                <div class="section-heading"><div><p class="section-kicker">LỊCH TRONG NGÀY</p><h2 id="today-title">Hôm nay học gì?</h2></div><a class="text-link" href="#schedule">Xem lịch đầy đủ <span>→</span></a></div>
+                <div class="empty-panel schedule-empty" id="scheduleEmpty"><div class="empty-mark">▦</div><div><h3>Chưa có lịch học hôm nay</h3><p>Lịch học theo ngày, phòng và giảng viên sẽ xuất hiện ở đây khi backend trả dữ liệu.</p><span class="inline-status">Đang chờ dữ liệu</span></div></div><div class="today-schedule" id="todaySchedule" hidden></div>
+              </section>
+
+              <section class="section-block" aria-labelledby="overview-title">
+                <div class="section-heading"><div><p class="section-kicker">TỔNG QUAN HỌC TẬP</p><h2 id="overview-title">Các chỉ số cần biết</h2></div><button class="quiet-button" type="button" id="refreshButton">↻ Đồng bộ</button></div>
+                <div class="stat-grid">
+                  <div class="stat-item"><span class="stat-label">Đúng giờ</span><strong id="summaryOnTime">—</strong><span class="stat-note">bản ghi</span></div>
+                  <div class="stat-item"><span class="stat-label">Đi trễ</span><strong id="summaryLate">—</strong><span class="stat-note">mọi mức trễ</span></div>
+                  <div class="stat-item"><span class="stat-label">Vắng</span><strong id="summaryAbsent">—</strong><span class="stat-note">đã ghi nhận</span></div>
+                </div>
+              </section>
+
+              <section class="section-block" aria-labelledby="quick-title">
+                <div class="section-heading"><div><p class="section-kicker">TRUY CẬP NHANH</p><h2 id="quick-title">Đi đến dữ liệu của bạn</h2></div></div>
+                <div class="quick-grid"><a href="#attendance" class="quick-link"><span class="quick-icon">✓</span><span><strong>Điểm danh</strong><small>Lịch sử có mặt, đi trễ, vắng</small></span><b>→</b></a><a href="#grades" class="quick-link"><span class="quick-icon">∿</span><span><strong>Điểm số</strong><small>Kết quả theo từng môn học</small></span><b>→</b></a><a href="#subjects" class="quick-link"><span class="quick-icon">□</span><span><strong>Môn học</strong><small>Thông tin học phần và giảng viên</small></span><b>→</b></a></div>
+              </section>
+            </div>
+
+            <aside class="secondary-column">
+              <section class="side-section" aria-labelledby="next-title"><div class="section-heading"><div><p class="section-kicker">TIẾT TIẾP THEO</p><h2 id="next-title">Sắp tới</h2></div></div><div class="next-empty"><span class="empty-mark">◷</span><p>Chưa có dữ liệu tiết học tiếp theo.</p><span class="inline-status">[BACKEND REQUIRED]</span></div></section>
+              <section class="side-section" aria-labelledby="notice-title"><div class="section-heading"><div><p class="section-kicker">CẬP NHẬT</p><h2 id="notice-title">Thông báo</h2></div><a class="text-link" href="#notifications" aria-label="Xem tất cả thông báo">Tất cả <span>→</span></a></div><div class="next-empty"><span class="empty-mark">!</span><p>Thông báo của bạn sẽ được hiển thị tại đây.</p><span class="inline-status">[BACKEND REQUIRED]</span></div></section>
+              <section class="support-note"><span class="support-icon">i</span><div><strong>Cần hỗ trợ?</strong><p>Liên hệ phòng Công tác sinh viên nếu thông tin chưa chính xác.</p><a href="mailto:ctsv@uth.edu.vn">ctsv@uth.edu.vn →</a></div></section>
+            </aside>
+          </div>
+        </div>
+
+        <div class="page-wrap" id="page-grades" hidden><section class="placeholder-page"><span class="section-kicker">ACADEMIC RECORD</span><h1>Điểm số</h1><p>Điểm thành phần được đồng bộ từ hệ thống Admin.</p><div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th>Môn học</th><th>Học kỳ</th><th>Loại điểm</th><th>Điểm</th></tr></thead><tbody id="gradesRows"></tbody></table></div></section></div>
+        <div class="page-wrap" id="page-subjects" hidden><section class="placeholder-page"><span class="section-kicker">SUBJECT MONITORING</span><h1>Môn học</h1><p>Tổng hợp số tiết trễ, vắng và điều kiện dự thi theo từng môn.</p><div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th>Môn học</th><th>Trễ</th><th>Vắng</th><th>Điều kiện thi</th></tr></thead><tbody id="subjectRows"></tbody></table></div></section></div>
+        <div class="page-wrap" id="page-attendance" hidden><section class="placeholder-page"><span class="section-kicker">LỊCH SỬ CÁ NHÂN</span><h1>Điểm danh</h1><p id="attendanceCopy">Các bản ghi được lấy từ Django source of truth.</p><div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th>Ngày</th><th>Môn học</th><th>Giờ dự kiến</th><th>Giờ quét</th><th>Trạng thái</th><th>Trễ</th></tr></thead><tbody id="attendanceRows"></tbody></table></div></section></div>
+        <div class="page-wrap route-placeholder" id="page-other" hidden><section class="placeholder-page"><span class="section-kicker">UTH STUDENT PORTAL</span><h1 id="placeholderTitle">Trang đang được chuẩn bị</h1><p id="placeholderCopy">Trang này sẽ dùng cùng hệ thống dữ liệu và quyền truy cập của portal.</p><div class="empty-panel"><div class="empty-mark">□</div><div><h3>[BACKEND REQUIRED]</h3><p>Chưa có endpoint student-facing tương ứng trong backend hiện tại. Giao diện sẽ không hiển thị dữ liệu giả.</p><a class="button button-primary" href="#home">Về trang chủ</a></div></div></section></div>
+      </main>
+    </div>
+    <nav class="bottom-nav" aria-label="Điều hướng mobile"><a class="is-active" href="#home" data-route="home"><span>⌂</span>Trang chủ</a><a href="#schedule" data-route="schedule"><span>▦</span>Lịch</a><a href="#grades" data-route="grades"><span>∿</span>Điểm</a><a href="#forum" data-route="forum"><span>◌</span>Diễn đàn</a><a href="#messages" data-route="messages"><span>▱</span>Chat</a></nav>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+django_app/attendance_system/venv/
+
+# Django/local runtime
+django_app/db.sqlite3
+django_app/media/
+django_app/staticfiles/
+*.log
+.env
+.env.*
+!.env.example
+
+# Biometric and private school data
+face_database.pkl
+my_faces/
+APP/Dữ liệu/Sinh viên trường/*
+APP/Dữ liệu/Lịch sử điểm danh/*
+APP/Dữ liệu/Admin/*
+APP/Máy điểm danh/inbox/*
+
+# Keep the intended data boundaries visible in a fresh clone
+!APP/Dữ liệu/Sinh viên trường/.gitkeep
+!APP/Dữ liệu/Lịch sử điểm danh/.gitkeep
+!APP/Dữ liệu/Admin/.gitkeep
+!APP/Máy điểm danh/inbox/.gitkeep
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

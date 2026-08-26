@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0759a5">
+  <meta name="description" content="UTH face attendance kiosk">
+  <link rel="icon" href="assets/uth-logo.png" type="image/png">
+  <title>UTH Attendance — Kiosk</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="kiosk-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <img class="uth-logo" src="assets/uth-logo.png" alt="Logo UTH — University of Transport Ho Chi Minh City">
+        <div>
+          <p class="eyebrow">UNIVERSITY OF</p>
+          <h1>TRANSPORT HCMC</h1>
+          <p class="system-name">FACE ATTENDANCE</p>
+        </div>
+      </div>
+      <div class="session-meta" aria-live="polite">
+        <span id="connection-dot" class="status-dot" data-state="checking"></span>
+        <span id="connection-label">Connecting</span>
+        <span class="meta-divider"></span>
+        <span id="session-label">Loading session</span>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <section class="camera-column" aria-label="Face recognition camera">
+        <div class="camera-frame" id="camera-frame">
+          <video id="camera" autoplay muted playsinline aria-label="Live camera feed"></video>
+          <canvas id="overlay" aria-hidden="true"></canvas>
+          <div class="camera-wash" aria-hidden="true"></div>
+          <div class="face-guide" aria-hidden="true"><span></span></div>
+          <div class="camera-caption">
+            <span class="live-indicator"><i></i> LIVE CAMERA</span>
+            <span id="latency-label">— ms</span>
+          </div>
+          <div class="camera-error" id="camera-error" hidden>
+            <span class="error-symbol">!</span>
+            <strong>CAMERA UNAVAILABLE</strong>
+            <p>Unable to connect to the camera. Check browser permissions.</p>
+            <button id="retry-camera" class="button button-light" type="button">Retry camera</button>
+          </div>
+        </div>
+        <div class="camera-note">
+          <span class="mono">01 / 02</span>
+          <span>Keep your face inside the guide · one person per scan</span>
+        </div>
+      </section>
+
+      <aside class="status-panel" aria-live="polite" aria-atomic="true">
+        <div class="panel-kicker"><span class="panel-index">02</span><span>ATTENDANCE STATUS</span></div>
+        <div class="status-content" id="status-content">
+          <div class="state-icon" id="state-icon">◎</div>
+          <p class="state-label" id="state-label">Ready to check in</p>
+          <h2 id="state-title">Place your face<br>inside the guide</h2>
+          <p class="state-copy" id="state-copy">Look straight at the camera. Recognition starts automatically.</p>
+        </div>
+        <div class="student-result" id="student-result" hidden>
+          <div class="result-rule"></div>
+          <p class="result-label" id="result-label">ATTENDANCE SUCCESS</p>
+          <h3 id="student-name">—</h3>
+          <dl>
+            <div><dt>MSSV</dt><dd id="student-id">—</dd></div>
+            <div><dt>TIME</dt><dd id="attendance-time">—</dd></div>
+          </dl>
+        </div>
+        <div class="session-card">
+          <div><span>CLASS</span><strong id="class-name">—</strong></div>
+          <div><span>SUBJECT</span><strong id="subject-name">—</strong></div>
+          <div><span>ROOM</span><strong id="room-name">—</strong></div>
+        </div>
+        <button id="retry-session" class="button button-outline" type="button" hidden>Reload session</button>
+      </aside>
+    </section>
+
+    <footer class="bottombar">
+      <div><span class="footer-label">SYSTEM</span><span id="system-label">Starting camera…</span></div>
+      <time id="clock" datetime="">00:00:00</time>
+      <div class="device-id"><span class="footer-label">DEVICE</span><span id="device-label">KIOSK-LOCAL</span></div>
+    </footer>
+  </main>
+  <script src="kiosk.js" defer></script>
+</body>
+</html>
