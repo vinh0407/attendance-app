@@ -17,7 +17,7 @@ Private biometric files, the local SQLite database and real school rosters are i
 ## Run the demo
 
 ```powershell
-cd django_app
+cd admin_check
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt

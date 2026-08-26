@@ -43,8 +43,8 @@ The kiosk runs unattended at a classroom entrance on a portrait 4:6 display. Stu
 
 ## Evidence on Hand
 
-- Existing Python face recognition engine: `project.py` and `django_app/portal/face_recognition.py`.
-- Existing Django models and APIs: `django_app/portal/models.py` and `django_app/portal/views.py`.
+- Existing Python face recognition engine: `project.py` and `admin_check/portal/face_recognition.py`.
+- Existing Django models and APIs: `admin_check/portal/models.py` and `admin_check/portal/views.py`.
 - User-provided logo asset at `APP/Máy điểm danh/assets/uth-logo.png`.
 
 ## Product Principles

@@ -39,8 +39,8 @@ Tên sản phẩm là UTH Student Portal. Visual direction là Academic Premium:
 
 ## Evidence on Hand
 
-- Django models tại `django_app/portal/models.py`: Student, Subject, Schedule, AttendanceSession và AttendanceRecord.
-- Các endpoint hiện có nằm trong `django_app/portal/urls.py` và `views.py`, chủ yếu phục vụ management/kiosk.
+- Django models tại `admin_check/portal/models.py`: Student, Subject, Schedule, AttendanceSession và AttendanceRecord.
+- Các endpoint hiện có nằm trong `admin_check/portal/urls.py` và `views.py`, chủ yếu phục vụ management/kiosk.
 - Logo thật tại `APP/Máy điểm danh/assets/uth-logo.png`.
 - Chưa có API student portal cho grades, notifications, forum, messages hoặc dashboard tổng hợp.
 

@@ -4,12 +4,12 @@ __pycache__/
 *.pyo
 .venv/
 venv/
-django_app/attendance_system/venv/
+admin_check/attendance_system/venv/
 
 # Django/local runtime
-django_app/db.sqlite3
-django_app/media/
-django_app/staticfiles/
+admin_check/db.sqlite3
+admin_check/media/
+admin_check/staticfiles/
 *.log
 .env
 .env.*

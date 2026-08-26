@@ -138,7 +138,7 @@ def api_sync_faces(request):
     GET /api/sync-faces/
     """
     try:
-        # Duong dan: BASE_DIR = django_app/, cha no la thu muc goc project
+        # Duong dan: BASE_DIR = admin_check/, cha no la thu muc goc project
         project_root = os.path.dirname(str(settings.BASE_DIR))
         db_file = os.path.join(project_root, 'face_database.pkl')
 

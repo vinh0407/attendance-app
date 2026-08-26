@@ -1,12 +1,12 @@
 # Máy điểm danh — Face Attendance Kiosk
 
-Kiosk portrait 4:6 camera-first, dùng camera thật của trình duyệt và gọi API Django đang có sẵn trong `django_app`.
+Kiosk portrait 4:6 camera-first, dùng camera thật của trình duyệt và gọi API Django đang có sẵn trong `admin_check`.
 
 Màu xanh trong UI là `UI BLUE — PROVISIONAL`. Logo UTH được lấy từ `assets/uth-logo.png` do người dùng cung cấp.
 
 ## Chạy
 
-1. Khởi động Django từ `C:\VisualStudio\App điểm danh\django_app` (`python manage.py runserver`).
+1. Khởi động Django từ `C:\VisualStudio\App điểm danh\admin_check` (`python manage.py runserver`).
 2. Mở kiosk tại `http://127.0.0.1:8000/kiosk/?device_id=KIOSK-A203`. Kiosk đã được Django phục vụ cùng origin; không mở `index.html` bằng `file://`, vì trình duyệt sẽ chặn camera và API.
 3. Tạo/mở một `AttendanceSession` ở trạng thái `active` trong Management App. Kiosk tự tải buổi active đầu tiên trong `/api/sessions/today/`.
 4. Cấp quyền camera khi được hỏi.
@@ -23,7 +23,7 @@ Response trả về cùng một attendance event cho kiosk, Management App và C
 ## Nguồn dữ liệu dùng chung
 
 Kiosk, Management và Student Portal không có database riêng. Cả ba chạy cùng
-origin Django và đọc/ghi `django_app/db.sqlite3` thông qua API. Kiosk chỉ gửi
+origin Django và đọc/ghi `admin_check/db.sqlite3` thông qua API. Kiosk chỉ gửi
 ảnh + `session_id` + `device_id`; Django nhận diện, phân loại thời gian và tạo
 một `AttendanceRecord`. Management, Portal và CSV export đọc lại chính bản ghi
 đó.
@@ -32,7 +32,7 @@ CSV là đường backup/import, không phải realtime database. Đặt CSV và
 `APP/Máy điểm danh/inbox/`, sau đó chạy:
 
 ```powershell
-cd "C:\VisualStudio\App điểm danh\django_app"
+cd "C:\VisualStudio\App điểm danh\admin_check"
 ..\venv\Scripts\python.exe manage.py import_attendance_csv --archive
 ```
 
