@@ -20,7 +20,8 @@ insightface==1.0.1
 # CPU backend (works on every deployment machine).
 onnxruntime>=1.18.0
 # Optional GPU backend: install this instead of onnxruntime when CUDA is available.
-# onnxruntime-gpu>=1.18.0
+# python -m pip uninstall -y onnxruntime
+# python -m pip install onnxruntime-gpu>=1.18.0
 
 # Optional - Production
 # waitress>=3.0.0

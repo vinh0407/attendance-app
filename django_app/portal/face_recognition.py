@@ -11,6 +11,7 @@ import json
 import re
 import warnings
 import importlib.metadata
+import ctypes
 from django.conf import settings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -44,11 +45,12 @@ def face_engine_status():
         providers = ort.get_available_providers()
     except Exception:
         providers = []
+    cuda_ready = _cuda_provider_usable(providers)
     return {
         'available': True,
         'code': 'READY',
         'message': 'Bộ nhận diện khuôn mặt sẵn sàng.',
-        'provider': 'CUDAExecutionProvider' if 'CUDAExecutionProvider' in providers else 'CPUExecutionProvider',
+        'provider': 'CUDAExecutionProvider' if cuda_ready else 'CPUExecutionProvider',
         'insightface_version': importlib.metadata.version('insightface'),
         'onnxruntime_version': importlib.metadata.version('onnxruntime') if 'onnxruntime' in importlib.metadata.packages_distributions() else None,
     }
@@ -61,9 +63,29 @@ def _inference_providers():
         available = ort.get_available_providers()
     except Exception:
         available = []
-    if 'CUDAExecutionProvider' in available:
+    if _cuda_provider_usable(available):
         return ['CUDAExecutionProvider', 'CPUExecutionProvider'], 0
     return ['CPUExecutionProvider'], -1
+
+
+def _cuda_provider_usable(available=None):
+    """Return whether the CUDA provider DLL and its dependencies can load."""
+    if available is None:
+        try:
+            import onnxruntime as ort
+            available = ort.get_available_providers()
+        except Exception:
+            return False
+    if 'CUDAExecutionProvider' not in available:
+        return False
+    try:
+        import onnxruntime as ort
+        provider_dll = os.path.join(os.path.dirname(ort.__file__), 'capi', 'onnxruntime_providers_cuda.dll')
+        loader = getattr(ctypes, 'WinDLL', ctypes.CDLL)
+        loader(provider_dll)
+        return True
+    except (OSError, ImportError):
+        return False
 
 def get_face_app():
     """Lấy instance FaceAnalysis (singleton để tránh load model nhiều lần)"""
