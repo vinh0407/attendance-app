@@ -12,6 +12,7 @@ import re
 import warnings
 import importlib.metadata
 import ctypes
+import tempfile
 from django.conf import settings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -128,8 +129,17 @@ def load_database():
 
 def save_database(database):
     """Lưu database embeddings vào file"""
-    with open(DATABASE_FILE, 'wb') as f:
-        pickle.dump(database, f)
+    directory = os.path.dirname(DATABASE_FILE) or '.'
+    fd, temp_path = tempfile.mkstemp(prefix='.face_database-', suffix='.tmp', dir=directory)
+    try:
+        with os.fdopen(fd, 'wb') as stream:
+            pickle.dump(database, stream, protocol=pickle.HIGHEST_PROTOCOL)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp_path, DATABASE_FILE)
+    finally:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
 
 
 def _safe_component(value):
@@ -192,10 +202,11 @@ def register_face(name, image, student_id='', class_name='', email=''):
     
     # Lưu vào database
     database = load_database()
-    if name in database:
-        database[name].append(embedding)
+    identity = str(student_id or '').strip() or name
+    if identity in database:
+        database[identity].append(embedding)
     else:
-        database[name] = [embedding]
+        database[identity] = [embedding]
     
     save_database(database)
     return True, f"Đã đăng ký thành công cho {name}"
@@ -344,7 +355,7 @@ def record_attendance_to_db(name, confidence, session_id=None):
             get_session_scheduled_time, next_attendance_id,
         )
         
-        student = Student.objects.filter(full_name=name).first()
+        student = Student.objects.filter(student_id=name).first() or Student.objects.filter(full_name=name).first()
         if not student:
             print(f"Không tìm thấy sinh viên: {name}")
             return False

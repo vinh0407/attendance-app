@@ -37,6 +37,7 @@ class AttendanceTimingTests(SimpleTestCase):
 
 class AttendanceCsvIntegrationTests(TestCase):
     def setUp(self):
+        self.admin = User.objects.create_user('audit-admin', is_staff=True, is_superuser=True)
         self.student = Student.objects.create(student_id='2251129999', full_name='CSV Student')
         classroom = ClassRoom.objects.create(class_id='CSV01', name='CSV Class')
         classroom.students.add(self.student)
@@ -86,7 +87,7 @@ class AttendanceCsvIntegrationTests(TestCase):
         self.assertEqual(result.imported, 1)
 
     def test_admin_can_create_class_and_postpone_session(self):
-        client = Client()
+        client = Client(); client.force_login(self.admin)
         response = client.post('/api/classes/create/', data=json.dumps({
             'class_id': 'NEW01', 'name': 'New class', 'department': 'IT',
         }), content_type='application/json')
@@ -103,7 +104,7 @@ class AttendanceCsvIntegrationTests(TestCase):
         self.assertTrue(AttendanceSession.objects.filter(schedule=self.session.schedule, date=datetime.date(2026, 8, 30), status='scheduled').exists())
 
     def test_admin_can_create_subject_and_assign_it_to_class(self):
-        client = Client()
+        client = Client(); client.force_login(self.admin)
         response = client.post('/api/subjects/create/', data=json.dumps({
             'code': 'NEW101', 'name': 'New subject', 'teacher': 'Lecturer', 'credits': 3,
         }), content_type='application/json')
@@ -117,7 +118,8 @@ class AttendanceCsvIntegrationTests(TestCase):
         self.assertTrue(Schedule.objects.filter(subject_id=subject_id, classroom_id=self.session.schedule.classroom_id).exists())
 
     def test_export_all_csv_has_consistent_rows(self):
-        response = Client().get('/api/export/all.csv')
+        client = Client(); client.force_login(self.admin)
+        response = client.get('/api/export/all.csv')
         self.assertEqual(response.status_code, 200)
         rows = list(csv.reader(io.StringIO(response.content.decode('utf-8-sig'))))
         self.assertGreaterEqual(len(rows), 2)

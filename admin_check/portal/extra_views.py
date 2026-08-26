@@ -17,8 +17,10 @@ from django.conf import settings
 from .models import Student, AttendanceRecord
 from . import face_recognition as fr
 from .attendance_service import METHOD_FACIAL_RECOGNITION, calculate_attendance_status, next_attendance_id
+from .views import kiosk_api_required, admin_api_required
 
 
+@kiosk_api_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_test_image(request):
@@ -34,6 +36,8 @@ def api_test_image(request):
         # Uu tien file upload
         if request.FILES.get('image'):
             img_file = request.FILES['image']
+            if img_file.size > 4 * 1024 * 1024:
+                return JsonResponse({'success': False, 'error': 'Image exceeds 4 MB limit'}, status=413)
             img_data = img_file.read()
             nparr = np.frombuffer(img_data, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -46,7 +50,9 @@ def api_test_image(request):
             if img_b64:
                 if ',' in img_b64:
                     img_b64 = img_b64.split(',')[1]
-                img_data = base64.b64decode(img_b64)
+                if len(img_b64) > 6 * 1024 * 1024:
+                    return JsonResponse({'success': False, 'error': 'Image exceeds 4 MB limit'}, status=413)
+                img_data = base64.b64decode(img_b64, validate=True)
                 nparr = np.frombuffer(img_data, np.uint8)
                 frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
@@ -127,10 +133,11 @@ def api_test_image(request):
             'attendance': attendance_results,
         })
 
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Image processing failed'}, status=500)
 
 
+@admin_api_required
 @require_http_methods(["GET"])
 def api_sync_faces(request):
     """
@@ -146,8 +153,6 @@ def api_sync_faces(request):
             return JsonResponse({
                 'success': False,
                 'error': 'Khong tim thay face_database.pkl',
-                'tried_path': db_file,
-                'BASE_DIR': str(settings.BASE_DIR),
             }, status=404)
 
         with open(db_file, 'rb') as f:
@@ -196,5 +201,5 @@ def api_sync_faces(request):
             'face_db_count': len(face_db),
         })
 
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Face synchronization failed'}, status=500)

@@ -27,10 +27,15 @@ import base64
 import os
 import datetime
 import csv
+import hmac
+import logging
 from functools import wraps
+from django.contrib.admin.views.decorators import staff_member_required
+from django.core.cache import cache
 
 PORTAL_FRONTEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'APP', 'Portal'))
 KIOSK_FRONTEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'APP', 'Máy điểm danh'))
+logger = logging.getLogger(__name__)
 
 
 def student_portal(request):
@@ -56,6 +61,37 @@ def student_api_required(view):
     def wrapped(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'success': False, 'error': 'Authentication required'}, status=401)
+        return view(request, *args, **kwargs)
+    return wrapped
+
+
+def admin_api_required(view):
+    """Require an authenticated staff user for management mutations."""
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return JsonResponse({'success': False, 'error': 'Staff authentication required'}, status=403)
+        return view(request, *args, **kwargs)
+    return wrapped
+
+
+def kiosk_api_required(view):
+    """Require the per-kiosk API key (or a staff session for local recovery)."""
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        supplied = request.headers.get('X-Kiosk-Key', '')
+        if request.user.is_authenticated and request.user.is_staff:
+            return view(request, *args, **kwargs)
+        if not supplied or not hmac.compare_digest(supplied, settings.KIOSK_API_KEY):
+            return JsonResponse({'success': False, 'error': 'Kiosk authentication required'}, status=401)
+        bucket = f"kiosk-rate:{request.META.get('REMOTE_ADDR', 'unknown')}:{timezone.now():%Y%m%d%H%M}"
+        try:
+            count = cache.get(bucket, 0)
+            if count >= 120:
+                return JsonResponse({'success': False, 'error': 'Too many requests'}, status=429)
+            cache.set(bucket, count + 1, timeout=120)
+        except Exception:
+            logger.warning('Kiosk rate limiter unavailable', exc_info=True)
         return view(request, *args, **kwargs)
     return wrapped
 
@@ -95,6 +131,7 @@ def home(request):
     return render(request, 'portal/home.html', context)
 
 
+@staff_member_required(login_url='/admin/login/')
 def admin_dashboard(request):
     """Trang Admin Dashboard"""
     from .face_recognition import load_database
@@ -130,6 +167,7 @@ def admin_dashboard(request):
     return render(request, 'portal/admin_dashboard.html', context)
 
 
+@staff_member_required(login_url='/admin/login/')
 def register_face(request):
     """Compatibility route: face registration belongs to the admin workspace."""
     return redirect(f"{settings.ADMIN_DASHBOARD_URL}#face-registration")
@@ -168,6 +206,7 @@ def _open_today_sessions(today=None):
         session_external_id(session)
 
 
+@staff_member_required(login_url='/admin/login/')
 def schedule_view(request):
     """Trang thời khóa biểu - Chọn buổi học để điểm danh"""
     today = timezone.localdate()
@@ -216,6 +255,7 @@ def schedule_view(request):
     return render(request, 'portal/schedule.html', context)
 
 
+@staff_member_required(login_url='/admin/login/')
 def start_attendance_session(request, schedule_id):
     """Bắt đầu buổi điểm danh từ thời khóa biểu"""
     schedule = get_object_or_404(Schedule, id=schedule_id)
@@ -242,6 +282,7 @@ def start_attendance_session(request, schedule_id):
     return redirect('portal:attendance_session', session_id=session.id)
 
 
+@staff_member_required(login_url='/admin/login/')
 def attendance_session(request, session_id):
     """Trang điểm danh cho 1 buổi học cụ thể"""
     session = get_object_or_404(AttendanceSession, id=session_id)
@@ -269,6 +310,7 @@ def attendance_session(request, session_id):
     return render(request, 'portal/attendance_session.html', context)
 
 
+@staff_member_required(login_url='/admin/login/')
 def end_attendance_session(request, session_id):
     """Kết thúc buổi điểm danh"""
     session = get_object_or_404(AttendanceSession, id=session_id)
@@ -279,7 +321,7 @@ def end_attendance_session(request, session_id):
     return redirect('portal:schedule')
 
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["POST"])
 def api_finalize_session(request, session_id):
     """Close a session and persist absent rows for the complete class roster."""
@@ -347,6 +389,7 @@ def video_feed_session(request, session_id):
 # API Endpoints
 # =====================================================
 
+@admin_api_required
 @require_http_methods(["GET"])
 def api_stats(request):
     """API trả về thống kê realtime"""
@@ -373,6 +416,8 @@ def api_stats(request):
     })
 
 
+@kiosk_api_required
+@csrf_exempt
 @require_http_methods(["POST"])
 def api_record_attendance(request):
     """
@@ -437,14 +482,13 @@ def api_record_attendance(request):
             'success': False,
             'error': 'Invalid JSON'
         }, status=400)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+    except Exception:
+        logger.exception('Attendance API failure')
+        return JsonResponse({'success': False, 'error': 'Attendance processing failed'}, status=500)
 
 
 @require_http_methods(["GET"])
+@admin_api_required
 def api_students(request):
     """API lấy danh sách sinh viên"""
     students = Student.objects.all().values(
@@ -457,6 +501,7 @@ def api_students(request):
 
 
 @require_http_methods(["GET"])
+@admin_api_required
 def api_attendance_today(request):
     """Attendance feed for management; optional date/subject/class filters."""
     date_text = request.GET.get('date', '')
@@ -669,13 +714,14 @@ def api_student_subject_summary(request):
 # Face Recognition APIs
 # =====================================================
 
+@admin_api_required
 @require_http_methods(["GET"])
 def api_face_engine_status(request):
     """Expose dependency health so the registration page can explain failures."""
     status = fr.face_engine_status()
     return JsonResponse({'success': True, 'data': status}, status=200 if status['available'] else 503)
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["POST"])
 def api_register_face(request):
     """API đăng ký khuôn mặt từ ảnh base64"""
@@ -693,6 +739,8 @@ def api_register_face(request):
                 'code': 'VALIDATION_ERROR',
                 'error': 'Vui lòng nhập mã sinh viên, họ tên và ít nhất một ảnh.'
             }, status=400)
+        if not isinstance(images_base64, list) or len(images_base64) > 5:
+            return JsonResponse({'success': False, 'code': 'VALIDATION_ERROR', 'error': 'At most 5 images may be registered.'}, status=400)
 
         engine = fr.face_engine_status()
         if not engine['available']:
@@ -711,7 +759,9 @@ def api_register_face(request):
                 if ',' in img_b64:
                     img_b64 = img_b64.split(',')[1]
                 
-                img_data = base64.b64decode(img_b64)
+                if not isinstance(img_b64, str) or len(img_b64) > 6 * 1024 * 1024:
+                    continue
+                img_data = base64.b64decode(img_b64, validate=True)
                 nparr = np.frombuffer(img_data, np.uint8)
                 frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 
@@ -779,14 +829,14 @@ def api_register_face(request):
             'code': 'INVALID_JSON',
             'error': 'Invalid JSON'
         }, status=400)
-    except Exception as e:
+    except Exception:
         return JsonResponse({
             'success': False,
-            'error': str(e)
+            'error': 'Face registration failed'
         }, status=500)
 
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["DELETE"])
 def api_delete_student(request, student_id):
     """API xóa sinh viên và dữ liệu khuôn mặt"""
@@ -800,8 +850,12 @@ def api_delete_student(request, student_id):
         
         # 1. Xóa khỏi face_database.pkl
         face_db = load_database()
-        if student_name in face_db:
-            del face_db[student_name]
+        removed = False
+        for identity in (student.student_id, student_name):
+            if identity in face_db:
+                face_db.pop(identity, None)
+                removed = True
+        if removed:
             save_database(face_db)
         
         # 2. Xóa thư mục ảnh my_faces/{tên}
@@ -826,14 +880,14 @@ def api_delete_student(request, student_id):
             'success': False,
             'error': 'Không tìm thấy sinh viên'
         }, status=404)
-    except Exception as e:
+    except Exception:
         return JsonResponse({
             'success': False,
-            'error': str(e)
+            'error': 'Student deletion failed'
         }, status=500)
 
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["PUT"])
 def api_update_student(request, student_id):
     """API cập nhật thông tin sinh viên"""
@@ -856,8 +910,9 @@ def api_update_student(request, student_id):
         if new_full_name != old_name or new_class_name != student.class_name:
             # Cập nhật face_database.pkl
             face_db = load_database()
-            if old_name in face_db:
-                face_db[new_full_name] = face_db.pop(old_name)
+            identity = student.student_id if student.student_id in face_db else old_name
+            if identity in face_db:
+                face_db[student.student_id] = face_db.pop(identity)
                 save_database(face_db)
             
             # Đổi tên thư mục my_faces
@@ -905,13 +960,14 @@ def api_update_student(request, student_id):
             'success': False,
             'error': 'Invalid JSON'
         }, status=400)
-    except Exception as e:
+    except Exception:
         return JsonResponse({
             'success': False,
-            'error': str(e)
+            'error': 'Student update failed'
         }, status=500)
 
 
+@kiosk_api_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_recognize_face(request):
@@ -932,7 +988,9 @@ def api_recognize_face(request):
         if ',' in image_base64:
             image_base64 = image_base64.split(',')[1]
         
-        img_data = base64.b64decode(image_base64)
+        if not isinstance(image_base64, str) or len(image_base64) > 6 * 1024 * 1024:
+            return JsonResponse({'success': False, 'error': 'Image exceeds 4 MB limit'}, status=413)
+        img_data = base64.b64decode(image_base64, validate=True)
         nparr = np.frombuffer(img_data, np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
@@ -1037,14 +1095,15 @@ def api_recognize_face(request):
             'success': False,
             'error': 'Invalid JSON'
         }, status=400)
-    except Exception as e:
+    except Exception:
         return JsonResponse({
             'success': False,
-            'error': str(e)
+            'error': 'Face recognition failed'
         }, status=500)
 
 
 @require_http_methods(["GET"])
+@admin_api_required
 def api_registered_faces(request):
     """API lấy danh sách khuôn mặt đã đăng ký"""
     database = fr.load_database()
@@ -1067,6 +1126,7 @@ def api_registered_faces(request):
 # =====================================================
 
 @require_http_methods(["GET"])
+@admin_api_required
 def api_schedules(request):
     """API lấy thời khóa biểu"""
     day = request.GET.get('day')
@@ -1093,6 +1153,7 @@ def api_schedules(request):
 
 
 @require_http_methods(["GET"])
+@kiosk_api_required
 def api_sessions_today(request):
     """API lấy các buổi điểm danh hôm nay"""
     today = timezone.localdate()
@@ -1118,6 +1179,7 @@ def api_sessions_today(request):
 
 
 @require_http_methods(["GET"])
+@admin_api_required
 def api_session_attendance(request, session_id):
     """API lấy danh sách điểm danh của 1 buổi"""
     try:
@@ -1212,6 +1274,7 @@ def _session_roster_rows(session):
 
 
 @require_http_methods(["GET"])
+@kiosk_api_required
 def api_session_roster(request, session_id):
     """Return every expected student, including students not yet scanned."""
     try:
@@ -1237,6 +1300,7 @@ def api_session_roster(request, session_id):
 
 
 @require_http_methods(["GET"])
+@admin_api_required
 def api_export_session_csv(request, session_id):
     """Export a session roster as UTF-8 BOM CSV for Excel compatibility."""
     try:
@@ -1261,7 +1325,7 @@ def api_export_session_csv(request, session_id):
     return response
 
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["POST"])
 def api_import_attendance_csv(request):
     """Administrative CSV backup import into the same central records."""
@@ -1283,6 +1347,7 @@ def api_import_attendance_csv(request):
     }, status=status)
 
 
+@kiosk_api_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_record_session_attendance(request):
@@ -1340,11 +1405,12 @@ def api_record_session_attendance(request):
         return JsonResponse({'success': False, 'error': 'Student not found'}, status=404)
     except ValueError as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=409)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    except Exception:
+        logger.exception('Session attendance API failure')
+        return JsonResponse({'success': False, 'error': 'Attendance processing failed'}, status=500)
 
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["POST"])
 def api_create_session(request):
     """API tạo buổi điểm danh mới"""
@@ -1394,11 +1460,12 @@ def api_create_session(request):
         
     except Schedule.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Schedule not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    except Exception:
+        logger.exception('Session creation API failure')
+        return JsonResponse({'success': False, 'error': 'Session creation failed'}, status=500)
 
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["POST"])
 def api_create_class(request):
     """Create a class and optionally attach existing students by ID."""
@@ -1427,7 +1494,7 @@ def api_create_class(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
 
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["POST"])
 def api_create_subject(request):
     """Create or update a subject from the Admin scheduling workspace."""
@@ -1460,7 +1527,7 @@ def api_create_subject(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
 
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["POST"])
 def api_create_schedule(request):
     """Attach a subject to a class and create/update its weekly schedule."""
@@ -1505,7 +1572,7 @@ def api_create_schedule(request):
         return JsonResponse({'success': False, 'error': 'Invalid subject, class, or period values'}, status=400)
 
 
-@csrf_exempt
+@admin_api_required
 @require_http_methods(["POST"])
 def api_postpone_session(request, session_id):
     """Postpone a session without deleting its attendance history."""
@@ -1538,6 +1605,7 @@ def api_postpone_session(request, session_id):
         return JsonResponse({'success': False, 'error': 'postponed_to must use YYYY-MM-DD'}, status=400)
 
 
+@admin_api_required
 @require_http_methods(["GET"])
 def api_export_all_csv(request):
     """Export students, classes, schedules, sessions and attendance in one CSV."""

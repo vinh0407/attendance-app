@@ -1,4 +1,6 @@
 const API = window.KIOSK_API_BASE || '';
+const KIOSK_KEY = window.KIOSK_API_KEY || 'development-kiosk-key-change-before-deployment';
+const kioskHeaders = extra => ({ 'X-Kiosk-Key': KIOSK_KEY, ...extra });
 const el = id => document.getElementById(id);
 const video = el('camera');
 const overlay = el('overlay');
@@ -41,8 +43,8 @@ async function loadSession() {
   try {
     const requestedSession = new URLSearchParams(window.location.search).get('session_id');
     const response = requestedSession
-      ? await fetch(`${API}/api/session/${encodeURIComponent(requestedSession)}/roster/`, { headers: { Accept:'application/json' } })
-      : await fetch(`${API}/api/sessions/today/`, { headers: { Accept:'application/json' } });
+      ? await fetch(`${API}/api/session/${encodeURIComponent(requestedSession)}/roster/`, { headers: kioskHeaders({ Accept:'application/json' }) })
+      : await fetch(`${API}/api/sessions/today/`, { headers: kioskHeaders({ Accept:'application/json' }) });
     if (!response.ok) throw new Error('session');
     const payload = await response.json();
     const session = requestedSession
@@ -126,7 +128,7 @@ async function recognize() {
   state.sending = true; const started = performance.now();
   try {
     const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = Math.round(640 * video.videoHeight / video.videoWidth); canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-    const response = await fetch(`${API}/api/recognize-face/`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ image:canvas.toDataURL('image/jpeg', .76), session_id:state.session.session_id || state.session.id, device_id }) });
+    const response = await fetch(`${API}/api/recognize-face/`, { method:'POST', headers:kioskHeaders({'Content-Type':'application/json'}), body:JSON.stringify({ image:canvas.toDataURL('image/jpeg', .76), session_id:state.session.session_id || state.session.id, device_id }) });
     const payload = await response.json(); el('latency-label').textContent = `${Math.round(performance.now()-started)} ms`;
     if (!response.ok || !payload.success) throw new Error(payload.error || 'recognition');
     const faces = payload.data?.recognized || []; drawDetections(faces);
