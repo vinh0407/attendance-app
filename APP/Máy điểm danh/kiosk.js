@@ -39,10 +39,19 @@ function showResult(face, duplicate = false) {
 
 async function loadSession() {
   try {
-    const response = await fetch(`${API}/api/sessions/today/`, { headers: { Accept:'application/json' } });
+    const requestedSession = new URLSearchParams(window.location.search).get('session_id');
+    const response = requestedSession
+      ? await fetch(`${API}/api/session/${encodeURIComponent(requestedSession)}/roster/`, { headers: { Accept:'application/json' } })
+      : await fetch(`${API}/api/sessions/today/`, { headers: { Accept:'application/json' } });
     if (!response.ok) throw new Error('session');
     const payload = await response.json();
-    const session = (payload.data || []).find(item => item.status === 'active');
+    const session = requestedSession
+      ? (payload.session ? {
+          ...payload.session,
+          subject: payload.session.subject_name,
+          classroom: payload.session.classroom,
+        } : null)
+      : (payload.data || []).find(item => item.status === 'active');
     state.session = session || null;
     if (!session) {
       el('session-label').textContent = 'No active session';
