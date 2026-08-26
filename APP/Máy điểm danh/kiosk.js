@@ -28,14 +28,15 @@ function showResult(face, duplicate = false) {
   el('student-result').hidden = false;
   const code = face.attendance_code || '';
   const attendanceLabel = face.attendance_label || (face.status === 'late' ? 'TRỄ' : face.status === 'absent' ? 'VẮNG' : 'ĐÚNG GIỜ');
-  el('result-label').textContent = duplicate ? 'ĐÃ ĐIỂM DANH' : (code === 'ON_TIME' ? 'ĐIỂM DANH THÀNH CÔNG' : 'ĐIỂM DANH');
+  const wrongClass = face.status === 'wrong_class' || code === 'WRONG_CLASS';
+  el('result-label').textContent = wrongClass ? 'KHÔNG GHI NHẬN' : (duplicate ? 'ĐÃ ĐIỂM DANH' : (code === 'ON_TIME' ? 'ĐIỂM DANH THÀNH CÔNG' : 'ĐIỂM DANH'));
   el('student-name').textContent = face.name || '—';
   el('student-id').textContent = face.student_id || '—';
   el('attendance-time').textContent = face.time_in || new Date().toLocaleTimeString('vi-VN', { hour12:false });
-  el('state-icon').textContent = duplicate ? '↺' : '✓';
-  el('state-label').textContent = duplicate ? 'BẢN GHI ĐÃ TỒN TẠI' : 'ĐÃ XÁC NHẬN';
-  el('state-title').innerHTML = duplicate ? 'Bạn đã<br>điểm danh' : `${attendanceLabel.replace(' — ', '<br>— ')}`;
-  el('state-copy').textContent = duplicate ? 'Hệ thống giữ bản ghi hiện tại và không tạo bản ghi trùng.' : (face.late_minutes ? `Trễ ${face.late_minutes} phút.` : 'Thông tin điểm danh đã được lưu.');
+  el('state-icon').textContent = wrongClass ? '!' : (duplicate ? '↺' : '✓');
+  el('state-label').textContent = wrongClass ? 'NHẦM LỚP' : (duplicate ? 'BẢN GHI ĐÃ TỒN TẠI' : 'ĐÃ XÁC NHẬN');
+  el('state-title').innerHTML = wrongClass ? 'Bạn đang<br>ở nhầm lớp' : (duplicate ? 'Bạn đã<br>điểm danh' : `${attendanceLabel.replace(' — ', '<br>— ')}`);
+  el('state-copy').textContent = wrongClass ? 'Khuôn mặt đã nhận diện nhưng sinh viên không thuộc lớp của session này.' : (duplicate ? 'Hệ thống giữ bản ghi hiện tại và không tạo bản ghi trùng.' : (face.late_minutes ? `Trễ ${face.late_minutes} phút.` : 'Thông tin điểm danh đã được lưu.'));
   state.resetTimer = setTimeout(() => setStatus('idle', 'Place your face<br>inside the guide', 'Look straight at the camera. Recognition starts automatically.'), 4200);
 }
 
@@ -136,6 +137,7 @@ async function recognize() {
     if (!faces.length) return setStatus('idle', 'Place your face<br>inside the guide', 'Look straight at the camera. Recognition starts automatically.');
     const face = faces[0];
     if (face.name === 'Unknown') return setStatus('unknown', 'Face not<br>recognized', 'Look straight at the camera and keep your face inside the guide.', 'UNKNOWN FACE', '!');
+    if (face.status === 'wrong_class' || face.attendance_code === 'WRONG_CLASS') return showResult(face, false);
     setStatus('recognizing', 'Verifying your<br>attendance', 'Checking your record against the current class session.', 'RECOGNIZING', '…');
     if (face.already_checked_in || (face.status === 'present' && !face.is_new_attendance)) showResult(face, true); else showResult(face, false);
   } catch (error) { setConnection('offline','Sync error'); setStatus('error','Unable to<br>sync', 'Your face was recognized, but the server could not confirm attendance. Try again.', 'SYNC ERROR', '!'); }

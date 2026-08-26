@@ -179,6 +179,8 @@ def record_attendance_event(
         raise ValueError("An attendance session is required")
     if require_active and session.status != "active":
         raise ValueError("Session is not active")
+    if not session.schedule.classroom.students.filter(pk=student.pk).exists():
+        raise ValueError("WRONG_CLASS: student is not enrolled in this class")
 
     check_in_dt = _as_datetime(check_in_at or timezone.now(), session.date)
     check_in_time = check_in_dt.time()

@@ -1044,6 +1044,18 @@ def api_recognize_face(request):
                     
                     if session_obj is None:
                         return JsonResponse({'success': False, 'error': 'An active session is required'}, status=409)
+                    enrolled = session_obj.schedule.classroom.students.filter(pk=student.pk).exists()
+                    if not enrolled:
+                        face_info.update({
+                            'status': 'wrong_class',
+                            'attendance_code': 'WRONG_CLASS',
+                            'attendance_label': 'NHẦM LỚP',
+                            'error': 'Student is not enrolled in this class session',
+                            'is_new_attendance': False,
+                            'already_checked_in': False,
+                        })
+                        recognized.append(face_info)
+                        continue
                     try:
                         record, created, timing = record_attendance_event(
                             session=session_obj,
