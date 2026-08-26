@@ -34,3 +34,6 @@ APP/Máy điểm danh/inbox/*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local UI review captures
+.impeccable/review/

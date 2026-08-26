@@ -25,7 +25,7 @@
   const toast = document.querySelector('#toast');
   let toastTimer;
 
-  const escapeHtml = (value) => String(value ?? '—').replace(/[&<>"']/g, (char) => ({
+  const escapeHtml = (value) => String(value ?? 'Not available').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
   }[char]));
 
@@ -57,7 +57,7 @@
   }
 
   function formatDate(value, options = { day: '2-digit', month: 'short', year: 'numeric' }) {
-    if (!value) return '—';
+    if (!value) return 'Not available';
     const date = new Date(`${value}T00:00:00`);
     return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('en-GB', options).format(date);
   }
@@ -172,15 +172,15 @@
       return;
     }
     const labels = {
-      ON_TIME: 'On time', LATE_LEVEL_1: 'Late — Level 1', LATE_ONE_PERIOD: 'Late — 1 period',
-      ABSENT_TWO_PERIODS: 'Absent — 2 periods', ABSENT: 'Absent'
+      ON_TIME: 'On time', LATE_LEVEL_1: 'Late - Level 1', LATE_ONE_PERIOD: 'Late - 1 period',
+      ABSENT_TWO_PERIODS: 'Absent - 2 periods', ABSENT: 'Absent'
     };
     target.innerHTML = portalData.attendance.map((item) => `<tr>
       <td>${escapeHtml(formatDate(item.date))}</td>
-      <td><strong>${escapeHtml(item.subject_name || 'General attendance')}</strong><small>${escapeHtml(item.subject_id || '—')}</small></td>
-      <td>${escapeHtml(item.scheduled_time || '—')}</td><td>${escapeHtml(item.check_in_time || '—')}</td>
+      <td><strong>${escapeHtml(item.subject_name || 'General attendance')}</strong><small>${escapeHtml(item.subject_id || 'Not available')}</small></td>
+      <td>${escapeHtml(item.scheduled_time || 'Not available')}</td><td>${escapeHtml(item.check_in_time || 'Not available')}</td>
       <td><span class="attendance-status status-${escapeHtml(item.status)}">${escapeHtml(labels[item.attendance_code] || item.status)}</span></td>
-      <td>${item.late_minutes ? `${escapeHtml(item.late_minutes)} minutes` : '—'}</td></tr>`).join('');
+      <td>${item.late_minutes ? `${escapeHtml(item.late_minutes)} minutes` : 'Not late'}</td></tr>`).join('');
   }
 
   function renderGrades() {
@@ -189,7 +189,7 @@
       target.innerHTML = '<tr><td colspan="4">No grades available yet.</td></tr>';
       return;
     }
-    target.innerHTML = portalData.grades.map((item) => `<tr><td><strong>${escapeHtml(item.subject_name)}</strong><small>${escapeHtml(item.subject_id)}</small></td><td>${escapeHtml(item.semester || '—')}</td><td>${escapeHtml(item.assessment_type)}</td><td><strong>${escapeHtml(Number(item.score).toFixed(2))}</strong></td></tr>`).join('');
+    target.innerHTML = portalData.grades.map((item) => `<tr><td><strong>${escapeHtml(item.subject_name)}</strong><small>${escapeHtml(item.subject_id)}</small></td><td>${escapeHtml(item.semester || 'Not available')}</td><td>${escapeHtml(item.assessment_type)}</td><td><strong>${escapeHtml(Number(item.score).toFixed(2))}</strong></td></tr>`).join('');
   }
 
   function renderSubjects() {
@@ -337,6 +337,9 @@
     const dark = document.body.classList.toggle('dark-preview');
     button.setAttribute('aria-pressed', String(dark));
     button.querySelector('b').textContent = dark ? 'Dark' : 'Light';
+    const themeIcon = document.querySelector('#themeIcon');
+    themeIcon.classList.toggle('ph-moon-stars', !dark);
+    themeIcon.classList.toggle('ph-sun', dark);
     showToast(dark ? 'Dark mode enabled.' : 'Light mode enabled.');
   });
 
