@@ -8,15 +8,49 @@
     <meta name="description" content="UTH Student Portal for schedules, grades, and attendance." />
     <title>UTH Student Portal</title>
     <link rel="icon" type="image/png" href="assets/uth-logo.png" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="drawer.css" />
+    <link rel="stylesheet" href="styles.css?v=20260827-3" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <div class="app-shell">
+    <section class="auth-gate" id="authGate" aria-labelledby="loginTitle">
+      <div class="auth-introduction">
+        <a class="auth-brand" href="/student-portal/" aria-label="UTH Student Portal home">
+          <img src="assets/uth-logo.png" alt="" width="48" height="48" />
+          <span><strong>UTH</strong><small>Student Portal</small></span>
+        </a>
+        <div class="auth-copy">
+          <h1>Your academic record, in one place.</h1>
+          <p>Review today’s schedule, attendance history, grades, and exam eligibility using information registered by UTH administrators.</p>
+        </div>
+        <dl class="auth-facts">
+          <div><dt>Official data</dt><dd>Connected to the attendance management system</dd></div>
+          <div><dt>Private session</dt><dd>Your records stay scoped to your student identity</dd></div>
+        </dl>
+      </div>
+      <div class="auth-panel">
+        <form class="login-form" id="studentLoginForm" novalidate>
+          <div>
+            <h2 id="loginTitle">Sign in to Student Portal</h2>
+            <p>Use the Student ID and class registered for you in Admin.</p>
+          </div>
+          <label for="loginStudentId">Student ID
+            <input id="loginStudentId" name="student_id" type="text" autocomplete="username" inputmode="numeric" maxlength="20" placeholder="2251120064" required />
+          </label>
+          <label for="loginClassName">Class
+            <input id="loginClassName" name="class_name" type="text" autocomplete="organization" maxlength="100" placeholder="CN22A or Mathematics" required />
+          </label>
+          <p class="form-error" id="loginError" role="alert" hidden></p>
+          <button class="login-button" id="loginSubmit" type="submit"><span>Sign in</span></button>
+          <p class="auth-note">Your class must match the class ID or class name assigned by an administrator.</p>
+        </form>
+        <p class="auth-support">Cannot sign in? Contact Student Affairs at <a href="mailto:ctsv@uth.edu.vn">ctsv@uth.edu.vn</a>.</p>
+      </div>
+    </section>
+
+    <div class="app-shell" id="portalShell" hidden>
       <aside class="sidebar" id="sidebar" aria-label="Main navigation">
         <div class="brand-block">
-          <img src="assets/uth-logo.png" alt="University of Transport Ho Chi Minh City logo" class="brand-logo" />
+          <img src="assets/uth-logo.png" alt="University of Transport Ho Chi Minh City logo" class="brand-logo" width="42" height="42" />
           <div><strong>UTH</strong><span>Student Portal</span></div>
         </div>
         <div class="sidebar-rule"></div>
@@ -29,11 +63,11 @@
           <a class="nav-item" href="#subjects" data-route="subjects"><span class="nav-icon">□</span><span>Subjects</span></a>
           <p class="nav-label nav-label-spaced">Connect</p>
           <a class="nav-item" href="#forum" data-route="forum"><span class="nav-icon">◌</span><span>Forum</span></a>
-          <a class="nav-item" href="#messages" data-route="messages"><span class="nav-icon">▱</span><span>Messages</span><span class="nav-count">[BACKEND REQUIRED]</span></a>
+          <a class="nav-item" href="#messages" data-route="messages"><span class="nav-icon">▱</span><span>Messages</span><span class="nav-count">COMING SOON</span></a>
           <a class="nav-item" href="#notifications" data-route="notifications"><span class="nav-icon">!</span><span>Notifications</span></a>
         </nav>
         <div class="sidebar-bottom">
-          <a class="profile-link" href="#profile" data-route="profile"><span class="avatar avatar-small">—</span><span><strong>Profile</strong><small>Manage your information</small></span></a>
+          <a class="profile-link" href="#profile" data-route="profile"><span class="avatar avatar-small" id="sidebarAvatar">—</span><span><strong id="sidebarName">Profile</strong><small id="sidebarMeta">Student information</small></span></a>
           <button class="theme-button" type="button" id="themeToggle" aria-pressed="false"><span>◐</span> Display mode <b>Light</b></button>
         </div>
       </aside>
@@ -43,7 +77,7 @@
         <header class="topbar">
           <button class="menu-button" id="menuToggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
           <div class="breadcrumb"><span>UTH Student Portal</span><span aria-hidden="true">/</span><strong id="pageLabel">Home</strong></div>
-          <div class="topbar-actions"><button class="icon-button" type="button" aria-label="Search" id="searchButton">⌕</button><button class="avatar" type="button" aria-label="Open profile">—</button></div>
+          <div class="topbar-actions"><span class="connection-label" id="connectionLabel">Connected</span><button class="quiet-button topbar-signout" type="button" id="logoutButton">Sign out</button><a class="avatar topbar-avatar" id="topbarAvatar" href="#profile" data-route="profile" aria-label="Open profile">—</a></div>
         </header>
 
         <div class="page-wrap" id="page-home">
@@ -77,21 +111,23 @@
             </div>
 
             <aside class="secondary-column">
-              <section class="side-section" aria-labelledby="next-title"><div class="section-heading"><div><p class="section-kicker">NEXT CLASS</p><h2 id="next-title">Coming up</h2></div></div><div class="next-empty"><span class="empty-mark">◷</span><p>No next-class data is available yet.</p><span class="inline-status">[BACKEND REQUIRED]</span></div></section>
-              <section class="side-section" aria-labelledby="notice-title"><div class="section-heading"><div><p class="section-kicker">UPDATES</p><h2 id="notice-title">Notifications</h2></div><a class="text-link" href="#notifications" aria-label="View all notifications">View all <span>→</span></a></div><div class="next-empty"><span class="empty-mark">!</span><p>Your notifications will appear here.</p><span class="inline-status">[BACKEND REQUIRED]</span></div></section>
+              <section class="side-section" aria-labelledby="next-title"><div class="section-heading"><div><p class="section-kicker">NEXT CLASS</p><h2 id="next-title">Coming up</h2></div></div><div class="next-empty" id="nextClass"><p>Checking today’s schedule.</p></div></section>
+              <section class="side-section" aria-labelledby="notice-title"><div class="section-heading"><div><p class="section-kicker">UPDATES</p><h2 id="notice-title">Notifications</h2></div><a class="text-link" href="#notifications" aria-label="View all notifications">View all <span>→</span></a></div><div class="next-empty"><span class="empty-mark">!</span><p>Your notifications will appear here.</p><span class="inline-status">COMING SOON</span></div></section>
               <section class="support-note"><span class="support-icon">i</span><div><strong>Need help?</strong><p>Contact Student Affairs if any information is incorrect.</p><a href="mailto:ctsv@uth.edu.vn">ctsv@uth.edu.vn →</a></div></section>
             </aside>
           </div>
         </div>
 
+        <div class="page-wrap" id="page-schedule" hidden><section class="placeholder-page"><span class="section-kicker">WEEKLY TIMETABLE</span><h1>Schedule</h1><p>Your active classes, ordered by day and period.</p><div class="weekly-schedule" id="weeklySchedule"></div></section></div>
         <div class="page-wrap" id="page-grades" hidden><section class="placeholder-page"><span class="section-kicker">ACADEMIC RECORD</span><h1>Grades</h1><p>Assessment results synchronized from the management system.</p><div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th>Subject</th><th>Semester</th><th>Assessment</th><th>Score</th></tr></thead><tbody id="gradesRows"></tbody></table></div></section></div>
         <div class="page-wrap" id="page-subjects" hidden><section class="placeholder-page"><span class="section-kicker">SUBJECT MONITORING</span><h1>Subjects</h1><p>Late periods, absences, and exam eligibility by subject.</p><div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th>Subject</th><th>Late</th><th>Absent</th><th>Exam eligibility</th></tr></thead><tbody id="subjectRows"></tbody></table></div></section></div>
         <div class="page-wrap" id="page-attendance" hidden><section class="placeholder-page"><span class="section-kicker">PERSONAL HISTORY</span><h1>Attendance</h1><p id="attendanceCopy">These records come directly from the UTH attendance system.</p><div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th>Date</th><th>Subject</th><th>Scheduled time</th><th>Check-in time</th><th>Status</th><th>Late by</th></tr></thead><tbody id="attendanceRows"></tbody></table></div></section></div>
-        <div class="page-wrap route-placeholder" id="page-other" hidden><section class="placeholder-page"><span class="section-kicker">UTH STUDENT PORTAL</span><h1 id="placeholderTitle">This page is being prepared</h1><p id="placeholderCopy">This page will use the same portal data and access permissions.</p><div class="empty-panel"><div class="empty-mark">□</div><div><h3>[BACKEND REQUIRED]</h3><p>The current backend does not provide a matching student endpoint. No placeholder data will be shown.</p><a class="button button-primary" href="#home">Return home</a></div></div></section></div>
+        <div class="page-wrap" id="page-profile" hidden><section class="placeholder-page profile-page"><span class="section-kicker">STUDENT IDENTITY</span><h1>Profile</h1><p>Your identity is read from the student record registered in Admin.</p><dl class="profile-ledger"><div><dt>Full name</dt><dd id="profilePageName">—</dd></div><div><dt>Student ID</dt><dd id="profilePageId">—</dd></div><div><dt>Class</dt><dd id="profilePageClass">—</dd></div><div><dt>Email</dt><dd id="profilePageEmail">Not provided</dd></div></dl></section></div>
+        <div class="page-wrap route-placeholder" id="page-other" hidden><section class="placeholder-page"><span class="section-kicker">UTH STUDENT PORTAL</span><h1 id="placeholderTitle">This page is being prepared</h1><p id="placeholderCopy">This page will use the same portal data and access permissions.</p><div class="empty-panel"><div class="empty-mark">□</div><div><h3>Not available yet</h3><p>The current backend does not provide a matching student endpoint. No placeholder data will be shown.</p><a class="button button-primary" href="#home">Return home</a></div></div></section></div>
       </main>
     </div>
-    <nav class="bottom-nav" aria-label="Mobile navigation"><a class="is-active" href="#home" data-route="home"><span>⌂</span>Home</a><a href="#schedule" data-route="schedule"><span>▦</span>Schedule</a><a href="#grades" data-route="grades"><span>∿</span>Grades</a><a href="#forum" data-route="forum"><span>◌</span>Forum</a><a href="#messages" data-route="messages"><span>▱</span>Messages</a></nav>
+    <nav class="bottom-nav" aria-label="Mobile navigation" id="bottomNav" hidden><a class="is-active" href="#home" data-route="home"><span>⌂</span>Home</a><a href="#schedule" data-route="schedule"><span>▦</span>Schedule</a><a href="#grades" data-route="grades"><span>∿</span>Grades</a><a href="#attendance" data-route="attendance"><span>✓</span>Attendance</a><a href="#subjects" data-route="subjects"><span>□</span>Subjects</a></nav>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js"></script>
+    <script src="app.js?v=20260827-3"></script>
   </body>
 </html>

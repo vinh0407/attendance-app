@@ -154,3 +154,91 @@ class AttendanceCsvIntegrationTests(TestCase):
         self.assertEqual(grades.json()['data'][0]['score'], 8.5)
         self.assertEqual(summary.status_code, 200)
         self.assertEqual(summary.json()['data'][0]['subject_id'], 'CSV101')
+
+
+class StudentPortalIdentityTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user('portal-admin', is_staff=True, is_superuser=True)
+        self.student = Student.objects.create(
+            student_id='2251120064',
+            full_name='Portal Student',
+            class_name='CN22A',
+            email='student@uth.edu.vn',
+        )
+        self.other_student = Student.objects.create(
+            student_id='2251120065',
+            full_name='Other Student',
+            class_name='CN22B',
+        )
+        self.classroom = ClassRoom.objects.create(class_id='CN22A', name='Mathematics')
+        self.classroom.students.add(self.student)
+        self.subject = Subject.objects.create(code='MATH101', name='Mathematics I')
+        self.schedule = Schedule.objects.create(
+            subject=self.subject,
+            classroom=self.classroom,
+            day_of_week=0,
+            start_period=1,
+            end_period=2,
+            room='A101',
+        )
+        self.session = AttendanceSession.objects.create(
+            schedule=self.schedule,
+            external_session_id='SES-PORTAL-001',
+            date=datetime.date(2026, 8, 24),
+            status='completed',
+        )
+        AttendanceRecord.objects.create(
+            attendance_id='ATT-PORTAL-001',
+            session=self.session,
+            student=self.student,
+            date=self.session.date,
+            status='present',
+            attendance_code='ON_TIME',
+            attendance_label='ON TIME',
+        )
+        AttendanceRecord.objects.create(
+            attendance_id='ATT-PORTAL-002',
+            session=self.session,
+            student=self.other_student,
+            date=self.session.date,
+            status='absent',
+            attendance_code='ABSENT',
+            attendance_label='ABSENT',
+        )
+
+    def _login(self, client, class_name='CN22A'):
+        return client.post('/api/student/login/', data=json.dumps({
+            'student_id': self.student.student_id,
+            'class_name': class_name,
+        }), content_type='application/json')
+
+    def test_student_can_sign_in_with_registered_id_and_class(self):
+        client = Client()
+        response = self._login(client, class_name='Mathematics')
+        self.assertEqual(response.status_code, 200)
+        dashboard = client.get('/api/student/me/dashboard/')
+        self.assertEqual(dashboard.status_code, 200)
+        data = dashboard.json()['data']
+        self.assertEqual(data['profile']['student_id'], self.student.student_id)
+        self.assertEqual(len(data['attendance']), 1)
+        self.assertEqual(data['attendance'][0]['attendance_id'], 'ATT-PORTAL-001')
+        self.assertEqual(data['schedule'][0]['subject_id'], 'MATH101')
+
+    def test_wrong_class_returns_generic_error(self):
+        client = Client()
+        response = self._login(client, class_name='CN22B')
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.json()['error'],
+            'Student ID or class does not match an admin-registered student.',
+        )
+        self.assertEqual(client.get('/api/student/me/dashboard/').status_code, 401)
+
+    def test_portal_identity_coexists_with_admin_session_and_logout(self):
+        client = Client()
+        client.force_login(self.admin)
+        self.assertEqual(self._login(client).status_code, 200)
+        self.assertEqual(client.get('/api/student/me/profile/').status_code, 200)
+        self.assertEqual(client.post('/api/student/logout/', data='{}', content_type='application/json').status_code, 200)
+        self.assertEqual(client.get('/api/student/me/profile/').status_code, 401)
+        self.assertEqual(client.get('/admin-dashboard/').status_code, 200)

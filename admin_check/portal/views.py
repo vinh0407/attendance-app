@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.conf import settings
 from django.utils import timezone
 from django.db.models import Count, Avg
@@ -28,6 +28,7 @@ import os
 import datetime
 import csv
 import hmac
+import hashlib
 import logging
 from functools import wraps
 from django.contrib.admin.views.decorators import staff_member_required
@@ -35,12 +36,17 @@ from django.core.cache import cache
 
 PORTAL_FRONTEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'APP', 'Portal'))
 KIOSK_FRONTEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'APP', 'Máy điểm danh'))
+PORTAL_STUDENT_SESSION_KEY = 'portal_student_pk'
+PORTAL_STUDENT_SESSION_AGE = 8 * 60 * 60
 logger = logging.getLogger(__name__)
 
 
+@ensure_csrf_cookie
 def student_portal(request):
     """Serve the existing static portal on the same origin as Django APIs."""
-    return serve(request, 'index.html', document_root=PORTAL_FRONTEND_ROOT)
+    response = serve(request, 'index.html', document_root=PORTAL_FRONTEND_ROOT)
+    response['Cache-Control'] = 'no-cache'
+    return response
 
 
 def student_portal_asset(request, path):
@@ -60,11 +66,34 @@ def attendance_kiosk_asset(request, path):
     return response
 
 
+def _current_student(request):
+    cached = getattr(request, 'portal_student', None)
+    if cached is not None:
+        return cached
+
+    student_pk = request.session.get(PORTAL_STUDENT_SESSION_KEY)
+    if student_pk:
+        student = Student.objects.filter(pk=student_pk).first()
+        if student:
+            request.portal_student = student
+            return student
+        request.session.pop(PORTAL_STUDENT_SESSION_KEY, None)
+
+    if request.user.is_authenticated and not request.user.is_staff:
+        student = Student.objects.filter(user=request.user).first()
+        if student:
+            request.portal_student = student
+            return student
+    return None
+
+
 def student_api_required(view):
     @wraps(view)
     def wrapped(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'success': False, 'error': 'Authentication required'}, status=401)
+        student = _current_student(request)
+        if not student:
+            return JsonResponse({'success': False, 'error': 'Student sign-in required'}, status=401)
+        request.portal_student = student
         return view(request, *args, **kwargs)
     return wrapped
 
@@ -558,25 +587,221 @@ def api_attendance_today(request):
     })
 
 
-def _current_student(request):
-    if not request.user.is_authenticated:
-        return None
-    return Student.objects.filter(user=request.user).first()
+def _normalise_identity_value(value):
+    return ' '.join(str(value or '').strip().split()).casefold()
 
 
-@student_api_required
-@require_http_methods(["GET"])
-def api_student_profile(request):
-    student = _current_student(request)
-    if not student:
-        return JsonResponse({'success': False, 'error': 'Student profile not linked'}, status=403)
-    return JsonResponse({'success': True, 'data': {
+def _student_class_values(student):
+    values = {_normalise_identity_value(student.class_name)} if student.class_name else set()
+    for classroom in student.classrooms.all():
+        values.add(_normalise_identity_value(classroom.class_id))
+        values.add(_normalise_identity_value(classroom.name))
+    return {value for value in values if value}
+
+
+def _student_profile_payload(student):
+    return {
         'student_id': student.student_id,
         'full_name': student.full_name,
         'email': student.email,
         'class_name': student.class_name,
         'is_registered': student.is_registered,
+    }
+
+
+@require_http_methods(["POST"])
+def api_student_login(request):
+    """Start an isolated Portal session using an admin-registered student identity."""
+    try:
+        data = json.loads(request.body or '{}')
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return JsonResponse({'success': False, 'error': 'Invalid request body'}, status=400)
+
+    student_id = str(data.get('student_id') or '').strip()[:20]
+    class_value = str(data.get('class_name') or '').strip()[:100]
+    if not student_id or not class_value:
+        return JsonResponse({'success': False, 'error': 'Student ID and class are required'}, status=400)
+
+    identity_digest = hashlib.sha256(student_id.casefold().encode('utf-8')).hexdigest()[:16]
+    rate_key = f"portal-login:{request.META.get('REMOTE_ADDR', 'unknown')}:{identity_digest}"
+    attempts = cache.get(rate_key, 0)
+    if attempts >= 10:
+        return JsonResponse({
+            'success': False,
+            'error': 'Too many sign-in attempts. Try again in five minutes.',
+        }, status=429)
+    cache.set(rate_key, attempts + 1, timeout=300)
+
+    student = Student.objects.filter(student_id__iexact=student_id).prefetch_related('classrooms').first()
+    supplied_class = _normalise_identity_value(class_value)
+    if not student or supplied_class not in _student_class_values(student):
+        return JsonResponse({
+            'success': False,
+            'error': 'Student ID or class does not match an admin-registered student.',
+        }, status=401)
+
+    request.session.cycle_key()
+    request.session[PORTAL_STUDENT_SESSION_KEY] = student.pk
+    request.session.set_expiry(PORTAL_STUDENT_SESSION_AGE)
+    cache.delete(rate_key)
+    response = JsonResponse({'success': True, 'data': _student_profile_payload(student)})
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@require_http_methods(["POST"])
+def api_student_logout(request):
+    """End only the Portal identity session without signing out an Admin user."""
+    request.session.pop(PORTAL_STUDENT_SESSION_KEY, None)
+    request.session.modified = True
+    response = JsonResponse({'success': True, 'message': 'Signed out'})
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+def _attendance_record_payload(record):
+    session = record.session
+    return {
+        'attendance_id': record.attendance_id,
+        'session_id': session_external_id(session) if session else None,
+        'date': str(record.date),
+        'subject_id': session.schedule.subject.code if session else None,
+        'subject_name': session.schedule.subject.name if session else None,
+        'scheduled_time': record.scheduled_time.strftime('%H:%M:%S') if record.scheduled_time else None,
+        'check_in_time': record.time_in.strftime('%H:%M:%S') if record.time_in else None,
+        'late_minutes': record.late_minutes,
+        'status': record.status,
+        'attendance_code': record.attendance_code,
+        'attendance_label': record.attendance_label,
+        'attendance_periods': record.attendance_periods,
+        'method': record.method,
+        'device_id': record.device_id,
+    }
+
+
+@student_api_required
+@require_http_methods(["GET"])
+def api_student_dashboard(request):
+    """Return the complete Portal workspace in one optimized, student-scoped response."""
+    from .attendance_service import session_period_count
+
+    student = request.portal_student
+    today = timezone.localdate()
+    schedules = list(Schedule.objects.filter(
+        is_active=True,
+        classroom__students=student,
+    ).select_related('subject', 'classroom').distinct())
+    records = list(AttendanceRecord.objects.filter(student=student).select_related(
+        'session__schedule__subject', 'session__schedule__classroom'
+    ))
+    grades = list(Grade.objects.filter(student=student).select_related('subject'))
+
+    schedule_data = [{
+        'schedule_id': schedule.id,
+        'day_of_week': schedule.day_of_week,
+        'day_name': schedule.get_day_of_week_display(),
+        'subject_id': schedule.subject.code,
+        'subject_name': schedule.subject.name,
+        'teacher': schedule.subject.teacher,
+        'class_id': schedule.classroom.class_id,
+        'classroom': schedule.classroom.name,
+        'room': schedule.room,
+        'start_period': schedule.start_period,
+        'end_period': schedule.end_period,
+        'time_range': schedule.get_time_range(),
+    } for schedule in schedules]
+    attendance_data = [_attendance_record_payload(record) for record in records]
+    grade_data = [{
+        'subject_id': grade.subject.code,
+        'subject_name': grade.subject.name,
+        'semester': grade.semester,
+        'assessment_type': grade.assessment_type,
+        'score': float(grade.score),
+        'updated_at': grade.updated_at.isoformat(),
+    } for grade in grades]
+
+    summary = {
+        'total_records': len(records),
+        'on_time': 0,
+        'late_level_1': 0,
+        'late_one_period': 0,
+        'absent_two_periods': 0,
+        'absent': 0,
+    }
+    summary_keys = {
+        'ON_TIME': 'on_time',
+        'LATE_LEVEL_1': 'late_level_1',
+        'LATE_ONE_PERIOD': 'late_one_period',
+        'ABSENT_TWO_PERIODS': 'absent_two_periods',
+        'ABSENT': 'absent',
+    }
+    subjects = {}
+    for schedule in schedules:
+        subjects.setdefault(schedule.subject_id, {
+            'subject_id': schedule.subject.code,
+            'subject_name': schedule.subject.name,
+            'absent_periods': 0,
+            'late_periods': 0,
+            'late_events': 0,
+            'grades': [],
+        })
+    for grade in grades:
+        item = subjects.setdefault(grade.subject_id, {
+            'subject_id': grade.subject.code,
+            'subject_name': grade.subject.name,
+            'absent_periods': 0,
+            'late_periods': 0,
+            'late_events': 0,
+            'grades': [],
+        })
+        item['grades'].append({
+            'semester': grade.semester,
+            'assessment_type': grade.assessment_type,
+            'score': float(grade.score),
+        })
+    for record in records:
+        summary_key = summary_keys.get(record.attendance_code)
+        if summary_key:
+            summary[summary_key] += 1
+        if not record.session_id:
+            continue
+        subject = record.session.schedule.subject
+        item = subjects.setdefault(subject.id, {
+            'subject_id': subject.code,
+            'subject_name': subject.name,
+            'absent_periods': 0,
+            'late_periods': 0,
+            'late_events': 0,
+            'grades': [],
+        })
+        if record.status == 'absent':
+            item['absent_periods'] += record.attendance_periods if record.attendance_periods is not None else session_period_count(record.session)
+        elif record.status == 'late':
+            item['late_events'] += 1
+            item['late_periods'] += record.attendance_periods or 0
+    for item in subjects.values():
+        item['exam_prohibited'] = item['absent_periods'] > 3
+        item['exam_status'] = 'EXAM PROHIBITED' if item['exam_prohibited'] else 'ELIGIBLE'
+
+    response = JsonResponse({'success': True, 'data': {
+        'profile': _student_profile_payload(student),
+        'date': str(today),
+        'schedule': schedule_data,
+        'schedule_today': [item for item in schedule_data if item['day_of_week'] == today.weekday()],
+        'attendance': attendance_data,
+        'attendance_summary': summary,
+        'grades': grade_data,
+        'subjects': sorted(subjects.values(), key=lambda item: item['subject_id']),
+        'synchronized_at': timezone.now().isoformat(),
     }})
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@student_api_required
+@require_http_methods(["GET"])
+def api_student_profile(request):
+    return JsonResponse({'success': True, 'data': _student_profile_payload(request.portal_student)})
 
 
 @student_api_required

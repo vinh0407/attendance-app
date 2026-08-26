@@ -49,6 +49,9 @@ urlpatterns = [
     path('api/export/all.csv', views.api_export_all_csv, name='api_export_all_csv'),
 
     # Authenticated student portal APIs
+    path('api/student/login/', views.api_student_login, name='api_student_login'),
+    path('api/student/logout/', views.api_student_logout, name='api_student_logout'),
+    path('api/student/me/dashboard/', views.api_student_dashboard, name='api_student_dashboard'),
     path('api/student/me/profile/', views.api_student_profile, name='api_student_profile'),
     path('api/student/me/schedule/today/', views.api_student_schedule_today, name='api_student_schedule_today'),
     path('api/student/me/attendance/', views.api_student_attendance, name='api_student_attendance'),
