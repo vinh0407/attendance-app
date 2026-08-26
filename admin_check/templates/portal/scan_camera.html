@@ -251,7 +251,7 @@ function stopScanning() {
 
 let isSending = false;
 
-// Capture snapshot and send to Django AI Server
+// Capture snapshot and send to UTH AI Server
 async function sendFrameForRecognition() {
     if (!video || video.paused || video.ended || !video.videoWidth || isSending) return;
 
@@ -428,4 +428,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 {% endblock %}
-

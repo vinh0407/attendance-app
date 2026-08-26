@@ -1,6 +1,11 @@
 from django.contrib import admin
 from .models import Student, AttendanceRecord, Camera, SystemStats, Subject, ClassRoom, Schedule, AttendanceSession, Grade
 
+# Replace Django's default admin branding with the product identity.
+admin.site.site_header = 'UTH Attendance Administration'
+admin.site.site_title = 'UTH Attendance'
+admin.site.index_title = 'UTH Management Center'
+
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
