@@ -22,6 +22,7 @@ onnxruntime>=1.18.0
 # Optional GPU backend: install this instead of onnxruntime when CUDA is available.
 # python -m pip uninstall -y onnxruntime
 # python -m pip install onnxruntime-gpu>=1.18.0
+# Windows GPU fallback without CUDA Toolkit: onnxruntime-directml==1.24.4
 
 # Optional - Production
 # waitress>=3.0.0

@@ -95,9 +95,12 @@ with `face.png` and `student.json`. The Student Portal exposes grades at
 `python manage.py import_grades`.
 
 InsightFace is pinned to `1.0.1`. The backend selects `CUDAExecutionProvider`
-when `onnxruntime-gpu` is installed and available, otherwise it uses the CPU
-`onnxruntime` backend. The Admin face-registration panel shows the active
-provider so a deployment can verify which inference backend is running.
+when CUDA is usable, `DmlExecutionProvider` on Windows when CUDA libraries are
+not available, and finally the CPU provider. The Admin face-registration panel
+shows the active provider so a deployment can verify which inference backend
+is running. On the current RTX 3050 laptop, DirectML is active because the
+installed NVIDIA driver exposes CUDA 11.6 while the newest CUDA runtime is
+not present.
 
 ## URLs
 

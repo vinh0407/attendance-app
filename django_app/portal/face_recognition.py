@@ -46,13 +46,24 @@ def face_engine_status():
     except Exception:
         providers = []
     cuda_ready = _cuda_provider_usable(providers)
+    dml_ready = 'DmlExecutionProvider' in providers
+    runtime_package = None
+    runtime_version = None
+    for candidate in ('onnxruntime-directml', 'onnxruntime-gpu', 'onnxruntime'):
+        try:
+            runtime_version = importlib.metadata.version(candidate)
+            runtime_package = candidate
+            break
+        except importlib.metadata.PackageNotFoundError:
+            continue
     return {
         'available': True,
         'code': 'READY',
         'message': 'Bộ nhận diện khuôn mặt sẵn sàng.',
-        'provider': 'CUDAExecutionProvider' if cuda_ready else 'CPUExecutionProvider',
+        'provider': 'CUDAExecutionProvider' if cuda_ready else ('DmlExecutionProvider' if dml_ready else 'CPUExecutionProvider'),
         'insightface_version': importlib.metadata.version('insightface'),
-        'onnxruntime_version': importlib.metadata.version('onnxruntime') if 'onnxruntime' in importlib.metadata.packages_distributions() else None,
+        'onnxruntime_package': runtime_package,
+        'onnxruntime_version': runtime_version,
     }
 
 
@@ -65,6 +76,8 @@ def _inference_providers():
         available = []
     if _cuda_provider_usable(available):
         return ['CUDAExecutionProvider', 'CPUExecutionProvider'], 0
+    if 'DmlExecutionProvider' in available:
+        return ['DmlExecutionProvider', 'CPUExecutionProvider'], 0
     return ['CPUExecutionProvider'], -1
 
 
