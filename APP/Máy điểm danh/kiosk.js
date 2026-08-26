@@ -76,7 +76,14 @@ async function loadSession() {
 }
 
 async function startCamera() {
-  if (!navigator.mediaDevices?.getUserMedia) return cameraFailed();
+  // Browsers only expose the camera API on secure contexts. `localhost` and
+  // `127.0.0.1` are treated as secure for local development, but a LAN URL
+  // such as `http://192.168.x.x:8000` must be served over HTTPS.
+  const localHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  if (!window.isSecureContext && !localHost) {
+    return cameraFailed('Camera requires HTTPS on a network address. Open http://127.0.0.1:8000/kiosk/ on this computer, or use an HTTPS URL for other devices.');
+  }
+  if (!navigator.mediaDevices?.getUserMedia) return cameraFailed('This browser does not provide camera access. Use a current Chrome, Edge, or Firefox browser.');
   try {
     if (state.camera) state.camera.getTracks().forEach(track => track.stop());
     state.camera = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user', width:{ideal:1280}, height:{ideal:720} }, audio:false });
@@ -85,13 +92,22 @@ async function startCamera() {
     el('system-label').textContent = 'Camera ready';
     await video.play();
     resizeOverlay();
-  } catch (error) { cameraFailed(); }
+  } catch (error) {
+    const message = error?.name === 'NotAllowedError'
+      ? 'Camera permission was blocked. Allow camera access for this site, then press Retry camera.'
+      : error?.name === 'NotFoundError'
+        ? 'No camera was found. Connect a camera and close apps that may be using it.'
+        : 'Unable to connect to the camera. Check browser permissions and Windows camera privacy settings.';
+    cameraFailed(message);
+  }
 }
 
-function cameraFailed() {
+function cameraFailed(message = 'Unable to connect to the camera. Check browser permissions.') {
   el('camera-error').hidden = false;
+  const copy = el('camera-error-copy');
+  if (copy) copy.textContent = message;
   el('system-label').textContent = 'Camera unavailable';
-  setStatus('error', 'Camera<br>unavailable', 'Unable to connect to the camera. Check browser permissions.', 'CAMERA ERROR', '!');
+  setStatus('error', 'Camera<br>unavailable', message, 'CAMERA ERROR', '!');
 }
 
 function resizeOverlay() { overlay.width = video.videoWidth || 1280; overlay.height = video.videoHeight || 720; }
