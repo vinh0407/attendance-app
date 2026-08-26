@@ -129,7 +129,7 @@ async function recognize() {
   state.sending = true; const started = performance.now();
   try {
     const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = Math.round(640 * video.videoHeight / video.videoWidth); canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-    const response = await fetch(`${API}/api/recognize-face/`, { method:'POST', headers:kioskHeaders({'Content-Type':'application/json'}), body:JSON.stringify({ image:canvas.toDataURL('image/jpeg', .76), session_id:state.session.session_id || state.session.id, device_id }) });
+    const response = await fetch(`${API}/api/recognize-face/`, { method:'POST', headers:kioskHeaders({'Content-Type':'application/json'}), body:JSON.stringify({ image:canvas.toDataURL('image/jpeg', .76), session_id:state.session.session_id || state.session.id, device_id:deviceId }) });
     const payload = await response.json(); el('latency-label').textContent = `${Math.round(performance.now()-started)} ms`;
     if (!response.ok || !payload.success) {
       const error = new Error(payload.error || `Server returned ${response.status}`);
