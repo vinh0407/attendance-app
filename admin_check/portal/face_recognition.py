@@ -38,7 +38,7 @@ def face_engine_status():
         return {
             'available': False,
             'code': 'FACE_ENGINE_UNAVAILABLE',
-            'message': 'Thiếu InsightFace trong môi trường chạy Django.',
+            'message': 'InsightFace is not installed in the server environment.',
             'detail': str(exc),
         }
     try:
@@ -60,7 +60,7 @@ def face_engine_status():
     return {
         'available': True,
         'code': 'READY',
-        'message': 'Bộ nhận diện khuôn mặt sẵn sàng.',
+        'message': 'Face recognition is ready.',
         'provider': 'CUDAExecutionProvider' if cuda_ready else ('DmlExecutionProvider' if dml_ready else 'CPUExecutionProvider'),
         'insightface_version': importlib.metadata.version('insightface'),
         'onnxruntime_package': runtime_package,
@@ -109,13 +109,13 @@ def get_face_app():
             from insightface.app import FaceAnalysis
         except ImportError as exc:
             raise RuntimeError(
-                "InsightFace chưa sẵn sàng. Hãy cài lại insightface và các dependency AI trước khi mở camera."
+                "InsightFace is not ready. Reinstall InsightFace and its AI dependencies before opening the camera."
             ) from exc
         providers, ctx_id = _inference_providers()
-        print(f"Đang tải model InsightFace ({providers[0]})...")
+        print(f"Loading InsightFace model ({providers[0]})...")
         _face_app = FaceAnalysis(name=MODEL_NAME, providers=providers)
         _face_app.prepare(ctx_id=ctx_id, det_size=(640, 640))
-        print("Tải model thành công!")
+        print("Model loaded successfully.")
     return _face_app
 
 
@@ -164,7 +164,7 @@ def register_face(name, image, student_id='', class_name='', email=''):
     faces = app.get(image)
     
     if len(faces) == 0:
-        return False, "Không tìm thấy khuôn mặt trong ảnh"
+        return False, "No face was detected in the image"
     
     if len(faces) > 1:
         # Chọn khuôn mặt lớn nhất
@@ -186,7 +186,7 @@ def register_face(name, image, student_id='', class_name='', email=''):
     # names and class labels are preserved on disk.
     success, encoded = cv2.imencode('.png', image)
     if not success:
-        return False, "Không thể mã hóa ảnh khuôn mặt"
+        return False, "Unable to encode the face image"
     with open(img_path, 'wb') as stream:
         stream.write(encoded.tobytes())
 
@@ -209,7 +209,7 @@ def register_face(name, image, student_id='', class_name='', email=''):
         database[identity] = [embedding]
     
     save_database(database)
-    return True, f"Đã đăng ký thành công cho {name}"
+    return True, f"Face registered successfully for {name}"
 
 
 def recognize_face(image):
@@ -357,7 +357,7 @@ def record_attendance_to_db(name, confidence, session_id=None):
         
         student = Student.objects.filter(student_id=name).first() or Student.objects.filter(full_name=name).first()
         if not student:
-            print(f"Không tìm thấy sinh viên: {name}")
+            print(f"Student not found: {name}")
             return False
         
         current_time = timezone.now()
@@ -386,10 +386,10 @@ def record_attendance_to_db(name, confidence, session_id=None):
                     }
                 )
                 if created:
-                    print(f"✅ {name} - Điểm danh buổi #{session_id} lúc {current_time.strftime('%H:%M:%S')}")
+                    print(f"{name} checked in for session #{session_id} at {current_time.strftime('%H:%M:%S')}")
                 return True
             except AttendanceSession.DoesNotExist:
-                print(f"Không tìm thấy buổi điểm danh: {session_id}")
+                print(f"Attendance session not found: {session_id}")
                 return False
         else:
             # Điểm danh chung (không theo buổi)
@@ -402,17 +402,17 @@ def record_attendance_to_db(name, confidence, session_id=None):
                     'time_in': current_time.time(),
                     'status': 'present',
                     'attendance_code': 'ON_TIME',
-                    'attendance_label': 'ĐÚNG GIỜ',
+                    'attendance_label': 'ON TIME',
                     'method': METHOD_FACIAL_RECOGNITION,
                     'confidence': confidence,
                 }
             )
             if created:
-                print(f"✅ {name} - Điểm danh lúc {current_time.strftime('%H:%M:%S')}")
+                print(f"{name} checked in at {current_time.strftime('%H:%M:%S')}")
             return True
             
     except Exception as e:
-        print(f"Lỗi ghi nhận điểm danh: {e}")
+        print(f"Attendance recording error: {e}")
         return False
 
 

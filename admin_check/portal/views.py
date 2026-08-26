@@ -184,7 +184,7 @@ def scan_camera(request):
     students = Student.objects.filter(is_registered=True)
     context = {
         'students': students,
-        'message': 'Điểm danh bằng nhận diện khuôn mặt'
+        'message': 'Face recognition attendance'
     }
     return render(request, 'portal/scan_camera.html', context)
 
@@ -741,7 +741,7 @@ def api_register_face(request):
             return JsonResponse({
                 'success': False,
                 'code': 'VALIDATION_ERROR',
-                'error': 'Vui lòng nhập mã sinh viên, họ tên và ít nhất một ảnh.'
+                'error': 'Enter a student ID, full name, and at least one image.'
             }, status=400)
         if not isinstance(images_base64, list) or len(images_base64) > 5:
             return JsonResponse({'success': False, 'code': 'VALIDATION_ERROR', 'error': 'At most 5 images may be registered.'}, status=400)
@@ -824,7 +824,7 @@ def api_register_face(request):
             return JsonResponse({
                 'success': False,
                 'code': 'NO_FACE_DETECTED',
-                'error': 'Không tìm thấy khuôn mặt rõ ràng trong ảnh đã chọn.'
+                'error': 'No clear face was detected in the selected image.'
             }, status=400)
             
     except json.JSONDecodeError:
@@ -876,13 +876,13 @@ def api_delete_student(request, student_id):
         
         return JsonResponse({
             'success': True,
-            'message': f'Đã xóa sinh viên {student_name} và tất cả dữ liệu liên quan'
+            'message': f'Deleted {student_name} and all related attendance and face data.'
         })
         
     except Student.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'error': 'Không tìm thấy sinh viên'
+            'error': 'Student not found'
         }, status=404)
     except Exception:
         return JsonResponse({
@@ -951,13 +951,13 @@ def api_update_student(request, student_id):
         
         return JsonResponse({
             'success': True,
-            'message': f'Đã cập nhật thông tin sinh viên {new_full_name}'
+            'message': f'Updated student information for {new_full_name}.'
         })
         
     except Student.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'error': 'Không tìm thấy sinh viên'
+            'error': 'Student not found'
         }, status=404)
     except json.JSONDecodeError:
         return JsonResponse({
@@ -1053,7 +1053,7 @@ def api_recognize_face(request):
                         face_info.update({
                             'status': 'wrong_class',
                             'attendance_code': 'WRONG_CLASS',
-                            'attendance_label': 'NHẦM LỚP',
+                            'attendance_label': 'WRONG CLASS',
                             'error': 'Student is not enrolled in this class session',
                             'is_new_attendance': False,
                             'already_checked_in': False,
@@ -1279,7 +1279,7 @@ def _session_roster_rows(session):
                 'late_minutes': None,
                 'status': 'absent' if closed else 'not_checked_in',
                 'attendance_code': 'ABSENT' if closed else 'NOT_CHECKED_IN',
-                'attendance_label': 'VẮNG' if closed else 'CHƯA ĐIỂM DANH',
+                'attendance_label': 'ABSENT' if closed else 'NOT CHECKED IN',
                 'attendance_periods': None,
                 'method': None,
                 'device_id': None,
@@ -1462,7 +1462,7 @@ def api_create_session(request):
         
         return JsonResponse({
             'success': True,
-            'message': 'Đã tạo buổi điểm danh',
+            'message': 'Attendance session created.',
             'data': {
                 'session_id': session.id,
                 'external_session_id': external_id,

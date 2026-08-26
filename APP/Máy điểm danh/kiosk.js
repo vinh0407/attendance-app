@@ -27,16 +27,17 @@ function showResult(face, duplicate = false) {
   clearTimeout(state.resetTimer);
   el('student-result').hidden = false;
   const code = face.attendance_code || '';
-  const attendanceLabel = face.attendance_label || (face.status === 'late' ? 'TRỄ' : face.status === 'absent' ? 'VẮNG' : 'ĐÚNG GIỜ');
+  const labelByCode = {ON_TIME:'ON TIME',LATE_LEVEL_1:'LATE — LEVEL 1',LATE_ONE_PERIOD:'LATE — 1 PERIOD',ABSENT_TWO_PERIODS:'ABSENT — 2 PERIODS',ABSENT:'ABSENT',WRONG_CLASS:'WRONG CLASS'};
+  const attendanceLabel = labelByCode[code] || (face.status === 'late' ? 'LATE' : face.status === 'absent' ? 'ABSENT' : 'ON TIME');
   const wrongClass = face.status === 'wrong_class' || code === 'WRONG_CLASS';
-  el('result-label').textContent = wrongClass ? 'KHÔNG GHI NHẬN' : (duplicate ? 'ĐÃ ĐIỂM DANH' : (code === 'ON_TIME' ? 'ĐIỂM DANH THÀNH CÔNG' : 'ĐIỂM DANH'));
+  el('result-label').textContent = wrongClass ? 'ATTENDANCE NOT RECORDED' : (duplicate ? 'ALREADY CHECKED IN' : (code === 'ON_TIME' ? 'ATTENDANCE CONFIRMED' : 'ATTENDANCE RESULT'));
   el('student-name').textContent = face.name || '—';
   el('student-id').textContent = face.student_id || '—';
   el('attendance-time').textContent = face.time_in || new Date().toLocaleTimeString('vi-VN', { hour12:false });
   el('state-icon').textContent = wrongClass ? '!' : (duplicate ? '↺' : '✓');
-  el('state-label').textContent = wrongClass ? 'NHẦM LỚP' : (duplicate ? 'BẢN GHI ĐÃ TỒN TẠI' : 'ĐÃ XÁC NHẬN');
-  el('state-title').innerHTML = wrongClass ? 'Bạn đang<br>ở nhầm lớp' : (duplicate ? 'Bạn đã<br>điểm danh' : `${attendanceLabel.replace(' — ', '<br>— ')}`);
-  el('state-copy').textContent = wrongClass ? 'Khuôn mặt đã nhận diện nhưng sinh viên không thuộc lớp của session này.' : (duplicate ? 'Hệ thống giữ bản ghi hiện tại và không tạo bản ghi trùng.' : (face.late_minutes ? `Trễ ${face.late_minutes} phút.` : 'Thông tin điểm danh đã được lưu.'));
+  el('state-label').textContent = wrongClass ? 'WRONG CLASS' : (duplicate ? 'EXISTING RECORD' : 'CONFIRMED');
+  el('state-title').innerHTML = wrongClass ? 'You are in the<br>wrong class' : (duplicate ? 'Already<br>checked in' : `${attendanceLabel.replace(' — ', '<br>— ')}`);
+  el('state-copy').textContent = wrongClass ? 'Your face was recognized, but you are not enrolled in this class session.' : (duplicate ? 'Your original check-in remains unchanged. No duplicate was created.' : (face.late_minutes ? `${face.late_minutes} minutes late.` : 'Your attendance has been recorded.'));
   state.resetTimer = setTimeout(() => setStatus('idle', 'Place your face<br>inside the guide', 'Look straight at the camera. Recognition starts automatically.'), 4200);
 }
 

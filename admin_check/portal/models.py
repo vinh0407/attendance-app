@@ -5,19 +5,19 @@ from django.contrib.auth.models import User
 class Student(models.Model):
     """Model lưu thông tin sinh viên"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
-    student_id = models.CharField(max_length=20, unique=True, verbose_name="Mã sinh viên")
-    full_name = models.CharField(max_length=100, verbose_name="Họ và tên")
+    student_id = models.CharField(max_length=20, unique=True, verbose_name="Student ID")
+    full_name = models.CharField(max_length=100, verbose_name="Full name")
     email = models.EmailField(blank=True, verbose_name="Email")
-    class_name = models.CharField(max_length=50, blank=True, verbose_name="Lớp")
-    face_encoding = models.BinaryField(null=True, blank=True, verbose_name="Face Encoding Data")
-    face_image = models.ImageField(upload_to='faces/', null=True, blank=True, verbose_name="Ảnh khuôn mặt")
-    is_registered = models.BooleanField(default=False, verbose_name="Đã đăng ký khuôn mặt")
+    class_name = models.CharField(max_length=50, blank=True, verbose_name="Class")
+    face_encoding = models.BinaryField(null=True, blank=True, verbose_name="Face encoding data")
+    face_image = models.ImageField(upload_to='faces/', null=True, blank=True, verbose_name="Face image")
+    is_registered = models.BooleanField(default=False, verbose_name="Face registered")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Sinh viên"
-        verbose_name_plural = "Danh sách sinh viên"
+        verbose_name = "Student"
+        verbose_name_plural = "Students"
         ordering = ['student_id']
 
     def __str__(self):
@@ -26,14 +26,14 @@ class Student(models.Model):
 
 class Subject(models.Model):
     """Model lưu thông tin môn học"""
-    code = models.CharField(max_length=20, unique=True, verbose_name="Mã môn học")
-    name = models.CharField(max_length=100, verbose_name="Tên môn học")
-    teacher = models.CharField(max_length=100, blank=True, verbose_name="Giảng viên")
-    credits = models.IntegerField(default=3, verbose_name="Số tín chỉ")
+    code = models.CharField(max_length=20, unique=True, verbose_name="Subject code")
+    name = models.CharField(max_length=100, verbose_name="Subject name")
+    teacher = models.CharField(max_length=100, blank=True, verbose_name="Teacher")
+    credits = models.IntegerField(default=3, verbose_name="Credits")
     
     class Meta:
-        verbose_name = "Môn học"
-        verbose_name_plural = "Danh sách môn học"
+        verbose_name = "Subject"
+        verbose_name_plural = "Subjects"
     
     def __str__(self):
         return f"{self.code} - {self.name}"
@@ -41,14 +41,14 @@ class Subject(models.Model):
 
 class ClassRoom(models.Model):
     """Model lưu thông tin lớp học"""
-    class_id = models.CharField(max_length=20, unique=True, verbose_name="Mã lớp")
-    name = models.CharField(max_length=100, verbose_name="Tên lớp")
-    department = models.CharField(max_length=100, blank=True, verbose_name="Khoa")
-    students = models.ManyToManyField(Student, related_name='classrooms', blank=True, verbose_name="Danh sách sinh viên")
+    class_id = models.CharField(max_length=20, unique=True, verbose_name="Class ID")
+    name = models.CharField(max_length=100, verbose_name="Class name")
+    department = models.CharField(max_length=100, blank=True, verbose_name="Department")
+    students = models.ManyToManyField(Student, related_name='classrooms', blank=True, verbose_name="Students")
     
     class Meta:
-        verbose_name = "Lớp học"
-        verbose_name_plural = "Danh sách lớp học"
+        verbose_name = "Class"
+        verbose_name_plural = "Classes"
     
     def __str__(self):
         return f"{self.class_id} - {self.name}"
@@ -57,39 +57,39 @@ class ClassRoom(models.Model):
 class Schedule(models.Model):
     """Model lưu thời khóa biểu - Buổi học"""
     DAY_CHOICES = [
-        (0, 'Thứ Hai'),
-        (1, 'Thứ Ba'),
-        (2, 'Thứ Tư'),
-        (3, 'Thứ Năm'),
-        (4, 'Thứ Sáu'),
-        (5, 'Thứ Bảy'),
-        (6, 'Chủ Nhật'),
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+        (5, 'Saturday'),
+        (6, 'Sunday'),
     ]
     
     PERIOD_CHOICES = [
-        (1, 'Tiết 1 (7:00 - 7:50)'),
-        (2, 'Tiết 2 (7:50 - 8:40)'),
-        (3, 'Tiết 3 (8:50 - 9:40)'),
-        (4, 'Tiết 4 (9:40 - 10:30)'),
-        (5, 'Tiết 5 (10:40 - 11:30)'),
-        (6, 'Tiết 6 (13:00 - 13:50)'),
-        (7, 'Tiết 7 (13:50 - 14:40)'),
-        (8, 'Tiết 8 (14:50 - 15:40)'),
-        (9, 'Tiết 9 (15:40 - 16:30)'),
-        (10, 'Tiết 10 (16:40 - 17:30)'),
+        (1, 'Period 1 (7:00 - 7:50)'),
+        (2, 'Period 2 (7:50 - 8:40)'),
+        (3, 'Period 3 (8:50 - 9:40)'),
+        (4, 'Period 4 (9:40 - 10:30)'),
+        (5, 'Period 5 (10:40 - 11:30)'),
+        (6, 'Period 6 (13:00 - 13:50)'),
+        (7, 'Period 7 (13:50 - 14:40)'),
+        (8, 'Period 8 (14:50 - 15:40)'),
+        (9, 'Period 9 (15:40 - 16:30)'),
+        (10, 'Period 10 (16:40 - 17:30)'),
     ]
     
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name="Môn học")
-    classroom = models.ForeignKey(ClassRoom, on_delete=models.CASCADE, verbose_name="Lớp học")
-    day_of_week = models.IntegerField(choices=DAY_CHOICES, verbose_name="Thứ")
-    start_period = models.IntegerField(choices=PERIOD_CHOICES, verbose_name="Tiết bắt đầu")
-    end_period = models.IntegerField(choices=PERIOD_CHOICES, verbose_name="Tiết kết thúc")
-    room = models.CharField(max_length=50, blank=True, verbose_name="Phòng học")
-    is_active = models.BooleanField(default=True, verbose_name="Đang hoạt động")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name="Subject")
+    classroom = models.ForeignKey(ClassRoom, on_delete=models.CASCADE, verbose_name="Class")
+    day_of_week = models.IntegerField(choices=DAY_CHOICES, verbose_name="Day")
+    start_period = models.IntegerField(choices=PERIOD_CHOICES, verbose_name="Start period")
+    end_period = models.IntegerField(choices=PERIOD_CHOICES, verbose_name="End period")
+    room = models.CharField(max_length=50, blank=True, verbose_name="Room")
+    is_active = models.BooleanField(default=True, verbose_name="Active")
     
     class Meta:
-        verbose_name = "Thời khóa biểu"
-        verbose_name_plural = "Thời khóa biểu"
+        verbose_name = "Schedule"
+        verbose_name_plural = "Schedules"
         ordering = ['day_of_week', 'start_period']
     
     def __str__(self):
@@ -117,27 +117,27 @@ class Schedule(models.Model):
 class AttendanceSession(models.Model):
     """Model lưu buổi điểm danh - Mỗi buổi học cụ thể có 1 ID riêng"""
     STATUS_CHOICES = [
-        ('scheduled', 'Đã lên lịch'),
-        ('active', 'Đang điểm danh'),
-        ('completed', 'Đã kết thúc'),
-        ('cancelled', 'Đã hủy'),
-        ('postponed', 'Hoãn'),
+        ('scheduled', 'Scheduled'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+        ('postponed', 'Postponed'),
     ]
     
-    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, verbose_name="Thời khóa biểu")
-    external_session_id = models.CharField(max_length=80, unique=True, null=True, blank=True, verbose_name="Mã phiên tích hợp")
-    date = models.DateField(verbose_name="Ngày học")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled', verbose_name="Trạng thái")
-    start_time = models.DateTimeField(null=True, blank=True, verbose_name="Thời gian bắt đầu điểm danh")
-    end_time = models.DateTimeField(null=True, blank=True, verbose_name="Thời gian kết thúc điểm danh")
-    notes = models.TextField(blank=True, verbose_name="Ghi chú")
-    postponed_to = models.DateField(null=True, blank=True, verbose_name="Ngày dời lịch")
-    postponed_reason = models.CharField(max_length=240, blank=True, verbose_name="Lý do hoãn")
+    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, verbose_name="Schedule")
+    external_session_id = models.CharField(max_length=80, unique=True, null=True, blank=True, verbose_name="External session ID")
+    date = models.DateField(verbose_name="Class date")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled', verbose_name="Status")
+    start_time = models.DateTimeField(null=True, blank=True, verbose_name="Attendance start time")
+    end_time = models.DateTimeField(null=True, blank=True, verbose_name="Attendance end time")
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    postponed_to = models.DateField(null=True, blank=True, verbose_name="Postponed to")
+    postponed_reason = models.CharField(max_length=240, blank=True, verbose_name="Postponement reason")
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        verbose_name = "Buổi điểm danh"
-        verbose_name_plural = "Các buổi điểm danh"
+        verbose_name = "Attendance session"
+        verbose_name_plural = "Attendance sessions"
         ordering = ['-date', '-created_at']
         unique_together = ['schedule', 'date']
     
@@ -154,40 +154,40 @@ class AttendanceSession(models.Model):
 class AttendanceRecord(models.Model):
     """Model lưu lịch sử điểm danh - Liên kết với buổi điểm danh"""
     STATUS_CHOICES = [
-        ('present', 'Có mặt'),
-        ('late', 'Đi muộn'),
-        ('absent', 'Vắng mặt'),
+        ('present', 'Present'),
+        ('late', 'Late'),
+        ('absent', 'Absent'),
     ]
 
-    attendance_id = models.CharField(max_length=40, unique=True, null=True, blank=True, verbose_name="Mã điểm danh")
-    session = models.ForeignKey(AttendanceSession, on_delete=models.CASCADE, related_name='session_records', null=True, blank=True, verbose_name="Buổi điểm danh")
+    attendance_id = models.CharField(max_length=40, unique=True, null=True, blank=True, verbose_name="Attendance ID")
+    session = models.ForeignKey(AttendanceSession, on_delete=models.CASCADE, related_name='session_records', null=True, blank=True, verbose_name="Attendance session")
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_records')
-    date = models.DateField(verbose_name="Ngày")
-    time_in = models.TimeField(null=True, blank=True, verbose_name="Giờ quét mặt")
-    time_out = models.TimeField(null=True, blank=True, verbose_name="Giờ ra")
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='present', verbose_name="Trạng thái")
-    confidence = models.FloatField(default=0.0, verbose_name="Độ tin cậy nhận diện (%)")
-    camera_id = models.CharField(max_length=50, blank=True, verbose_name="ID Camera")
-    scheduled_time = models.TimeField(null=True, blank=True, verbose_name="Giờ học dự kiến")
-    late_minutes = models.PositiveIntegerField(default=0, verbose_name="Số phút trễ")
-    attendance_code = models.CharField(max_length=40, blank=True, verbose_name="Mã trạng thái")
-    attendance_label = models.CharField(max_length=80, blank=True, verbose_name="Nhãn trạng thái")
-    attendance_periods = models.PositiveIntegerField(null=True, blank=True, verbose_name="Số tiết bị tính")
-    method = models.CharField(max_length=40, default='FACIAL_RECOGNITION', verbose_name="Phương thức")
-    device_id = models.CharField(max_length=80, blank=True, verbose_name="Thiết bị")
-    notes = models.TextField(blank=True, verbose_name="Ghi chú")
+    date = models.DateField(verbose_name="Date")
+    time_in = models.TimeField(null=True, blank=True, verbose_name="Check-in time")
+    time_out = models.TimeField(null=True, blank=True, verbose_name="Check-out time")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='present', verbose_name="Status")
+    confidence = models.FloatField(default=0.0, verbose_name="Recognition confidence (%)")
+    camera_id = models.CharField(max_length=50, blank=True, verbose_name="Camera ID")
+    scheduled_time = models.TimeField(null=True, blank=True, verbose_name="Scheduled time")
+    late_minutes = models.PositiveIntegerField(default=0, verbose_name="Late minutes")
+    attendance_code = models.CharField(max_length=40, blank=True, verbose_name="Status code")
+    attendance_label = models.CharField(max_length=80, blank=True, verbose_name="Status label")
+    attendance_periods = models.PositiveIntegerField(null=True, blank=True, verbose_name="Counted periods")
+    method = models.CharField(max_length=40, default='FACIAL_RECOGNITION', verbose_name="Method")
+    device_id = models.CharField(max_length=80, blank=True, verbose_name="Device")
+    notes = models.TextField(blank=True, verbose_name="Notes")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Bản ghi điểm danh"
-        verbose_name_plural = "Lịch sử điểm danh"
+        verbose_name = "Attendance record"
+        verbose_name_plural = "Attendance records"
         ordering = ['-date', '-time_in']
         constraints = [
             models.UniqueConstraint(fields=['session', 'student'], name='uniq_attendance_session_student'),
         ]
 
     def __str__(self):
-        session_info = f" - Buổi #{self.session.id}" if self.session else ""
+        session_info = f" - Session #{self.session.id}" if self.session else ""
         return f"{self.student.full_name} - {self.date}{session_info} - {self.get_status_display()}"
 
 
@@ -216,22 +216,22 @@ class Grade(models.Model):
 class Camera(models.Model):
     """Model quản lý camera"""
     STATUS_CHOICES = [
-        ('active', 'Hoạt động'),
-        ('inactive', 'Không hoạt động'),
-        ('maintenance', 'Bảo trì'),
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('maintenance', 'Maintenance'),
     ]
 
-    camera_id = models.CharField(max_length=50, unique=True, verbose_name="ID Camera")
-    name = models.CharField(max_length=100, verbose_name="Tên camera")
-    location = models.CharField(max_length=200, verbose_name="Vị trí")
-    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="Địa chỉ IP")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name="Trạng thái")
-    last_active = models.DateTimeField(null=True, blank=True, verbose_name="Hoạt động lần cuối")
+    camera_id = models.CharField(max_length=50, unique=True, verbose_name="Camera ID")
+    name = models.CharField(max_length=100, verbose_name="Camera name")
+    location = models.CharField(max_length=200, verbose_name="Location")
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="IP address")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name="Status")
+    last_active = models.DateTimeField(null=True, blank=True, verbose_name="Last active")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Camera"
-        verbose_name_plural = "Danh sách camera"
+        verbose_name_plural = "Cameras"
 
     def __str__(self):
         return f"{self.name} ({self.camera_id})"
@@ -239,15 +239,15 @@ class Camera(models.Model):
 
 class SystemStats(models.Model):
     """Model lưu thống kê hệ thống"""
-    date = models.DateField(unique=True, verbose_name="Ngày")
-    total_students = models.IntegerField(default=0, verbose_name="Tổng số sinh viên")
-    attendance_rate = models.FloatField(default=0.0, verbose_name="Tỷ lệ điểm danh (%)")
-    avg_scan_time = models.FloatField(default=0.0, verbose_name="Thời gian scan trung bình (s)")
-    total_scans = models.IntegerField(default=0, verbose_name="Tổng số lần scan")
+    date = models.DateField(unique=True, verbose_name="Date")
+    total_students = models.IntegerField(default=0, verbose_name="Total students")
+    attendance_rate = models.FloatField(default=0.0, verbose_name="Attendance rate (%)")
+    avg_scan_time = models.FloatField(default=0.0, verbose_name="Average scan time (s)")
+    total_scans = models.IntegerField(default=0, verbose_name="Total scans")
 
     class Meta:
-        verbose_name = "Thống kê hệ thống"
-        verbose_name_plural = "Thống kê hệ thống"
+        verbose_name = "System statistics"
+        verbose_name_plural = "System statistics"
         ordering = ['-date']
 
     def __str__(self):

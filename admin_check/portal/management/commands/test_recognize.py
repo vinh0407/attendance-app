@@ -13,19 +13,19 @@ from portal.models import Student, AttendanceRecord
 
 
 class Command(BaseCommand):
-    help = 'Test nhận diện khuôn mặt và ghi điểm danh'
+    help = 'Test face recognition and attendance recording.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--image', type=str, help='Đường dẫn tới ảnh cần nhận diện')
-        parser.add_argument('--all', action='store_true', help='Test tất cả ảnh trong my_faces/')
-        parser.add_argument('--no-save', action='store_true', help='Chỉ nhận diện, không lưu điểm danh')
+        parser.add_argument('--image', type=str, help='Path to the image to recognize.')
+        parser.add_argument('--all', action='store_true', help='Test every image in my_faces/.')
+        parser.add_argument('--no-save', action='store_true', help='Recognize faces without recording attendance.')
 
     def handle(self, *args, **options):
         from portal import face_recognition as fr
 
-        self.stdout.write('🔄 Đang tải model InsightFace...')
+        self.stdout.write('🔄 Loading the InsightFace model...')
         app = fr.get_face_app()
-        self.stdout.write(self.style.SUCCESS('✅ Đã tải model xong!'))
+        self.stdout.write(self.style.SUCCESS('✅ Model loaded.'))
         self.stdout.write('')
 
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
@@ -33,7 +33,7 @@ class Command(BaseCommand):
         if options['all']:
             # Test tất cả ảnh trong my_faces
             my_faces_dir = os.path.join(base_dir, 'my_faces')
-            self.stdout.write(f'📁 Thư mục my_faces: {my_faces_dir}')
+            self.stdout.write(f'📁 my_faces directory: {my_faces_dir}')
             self.stdout.write('=' * 60)
 
             for person_name in os.listdir(my_faces_dir):
@@ -41,7 +41,7 @@ class Command(BaseCommand):
                 if not os.path.isdir(person_dir):
                     continue
 
-                self.stdout.write(f'\n👤 Test người: {person_name}')
+                self.stdout.write(f'\n👤 Testing person: {person_name}')
                 images = [f for f in os.listdir(person_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
 
                 for img_file in images[:2]:  # Test tối đa 2 ảnh mỗi người
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         elif options['image']:
             img_path = options['image']
             if not os.path.exists(img_path):
-                self.stdout.write(self.style.ERROR(f'❌ Không tìm thấy file: {img_path}'))
+                self.stdout.write(self.style.ERROR(f'❌ File not found: {img_path}'))
                 return
             self._test_image(fr, img_path, options['no_save'])
 
@@ -63,16 +63,16 @@ class Command(BaseCommand):
             ]
             for img_path in test_images:
                 if os.path.exists(img_path):
-                    self.stdout.write(f'\n📸 Test ảnh: {os.path.basename(img_path)}')
+                    self.stdout.write(f'\n📸 Testing image: {os.path.basename(img_path)}')
                     self._test_image(fr, img_path, options['no_save'])
                 else:
-                    self.stdout.write(self.style.WARNING(f'⚠️  Không có: {img_path}'))
+                    self.stdout.write(self.style.WARNING(f'⚠️  Missing: {img_path}'))
 
-            self.stdout.write('\n💡 Tip: Dùng --image <path> để test ảnh cụ thể, --all để test tất cả')
+            self.stdout.write('\n💡 Tip: Use --image <path> for one image or --all to test every image.')
 
         # Hiển thị kết quả điểm danh hôm nay
         self.stdout.write('\n' + '=' * 60)
-        self.stdout.write('📊 ĐIỂM DANH HÔM NAY:')
+        self.stdout.write("📊 TODAY'S ATTENDANCE:")
         today = timezone.localdate()
         records = AttendanceRecord.objects.filter(date=today).select_related('student')
         if records.exists():
@@ -84,26 +84,26 @@ class Command(BaseCommand):
                     f'{r.get_status_display()} - {time_str} - Confidence: {conf}'
                 )
         else:
-            self.stdout.write('  Chưa có bản ghi điểm danh nào hôm nay.')
+            self.stdout.write('  No attendance records have been created today.')
 
     def _test_image(self, fr, img_path, no_save=False):
         """Test nhận diện 1 ảnh"""
         frame = cv2.imread(img_path)
         if frame is None:
-            self.stdout.write(self.style.ERROR(f'  ❌ Không đọc được ảnh: {img_path}'))
+            self.stdout.write(self.style.ERROR(f'  ❌ Unable to read image: {img_path}'))
             return
 
         h, w = frame.shape[:2]
-        self.stdout.write(f'  📐 Kích thước: {w}x{h}')
+        self.stdout.write(f'  📐 Dimensions: {w}x{h}')
 
         # Nhận diện
         results = fr.recognize_face(frame)
 
         if not results:
-            self.stdout.write(self.style.WARNING('  ⚠️  Không tìm thấy khuôn mặt nào!'))
+            self.stdout.write(self.style.WARNING('  ⚠️  No faces detected.'))
             return
 
-        self.stdout.write(f'  🔍 Tìm thấy {len(results)} khuôn mặt:')
+        self.stdout.write(f'  🔍 Detected {len(results)} face(s):')
         for i, r in enumerate(results, 1):
             name = r['name']
             conf = r['confidence']
@@ -129,16 +129,16 @@ class Command(BaseCommand):
                                 'confidence': conf / 100.0,
                             }
                         )
-                        action = '🆕 Điểm danh mới' if created else '🔄 Cập nhật'
+                        action = '🆕 New attendance' if created else '🔄 Updated attendance'
                         self.stdout.write(
                             self.style.SUCCESS(
                                 f'    → {action}: {student.full_name} ({student.student_id}) '
-                                f'lúc {current_time.strftime("%H:%M:%S")}'
+                                f'at {current_time.strftime("%H:%M:%S")}'
                             )
                         )
                     else:
                         self.stdout.write(
-                            self.style.WARNING(f'    ⚠️  Không tìm thấy "{name}" trong Student DB (chạy sync_faces trước)')
+                            self.style.WARNING(f'    ⚠️  "{name}" was not found in the student database. Run sync_faces first.')
                         )
                 except Exception as e:
-                    self.stdout.write(self.style.ERROR(f'    ❌ Lỗi ghi điểm danh: {e}'))
+                    self.stdout.write(self.style.ERROR(f'    ❌ Attendance recording failed: {e}'))

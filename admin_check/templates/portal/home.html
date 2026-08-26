@@ -15,7 +15,7 @@
 <header class="relative z-50 flex items-center justify-between px-6 py-4 lg:px-12 w-full max-w-7xl mx-auto">
     <div class="flex items-center gap-3 glass-card px-4 py-2 rounded-full cursor-pointer hover:border-primary/30 transition-all duration-300 group">
         <span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">visibility</span>
-        <span class="font-bold text-sm tracking-wide">ĐIỂM DANH AI</span>
+        <span class="font-bold text-sm tracking-wide">AI ATTENDANCE</span>
     </div>
     <div class="flex items-center gap-4">
         <!-- Current Time -->
@@ -30,18 +30,18 @@
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
-            <span class="text-xs font-medium text-green-400 uppercase tracking-wider">Hệ thống hoạt động</span>
+            <span class="text-xs font-medium text-green-400 uppercase tracking-wider">System online</span>
         </div>
 
         <!-- Quick Actions -->
         <div class="hidden md:flex items-center gap-2">
             <button id="settingsBtn" class="has-tooltip relative flex items-center justify-center h-10 w-10 rounded-full glass-card hover:bg-white/5 transition-colors">
                 <span class="material-symbols-outlined text-sm">settings</span>
-                <span class="tooltip absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap">Cài đặt</span>
+                <span class="tooltip absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap">Settings</span>
             </button>
             <button id="helpBtn" class="has-tooltip relative flex items-center justify-center h-10 w-10 rounded-full glass-card hover:bg-white/5 transition-colors">
                 <span class="material-symbols-outlined text-sm">help</span>
-                <span class="tooltip absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap">Trợ giúp</span>
+                <span class="tooltip absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap">Help</span>
             </button>
         </div>
     </div>
@@ -63,11 +63,11 @@
                         v.2.4.0 Beta
                     </div>
                     <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-4">
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-white/70 animate-float inline-block">Điểm Danh</span><br />
-                        <span class="text-glow">Thông Minh</span>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-white/70 animate-float inline-block">Smart</span><br />
+                        <span class="text-glow">Attendance</span>
                     </h1>
                     <p class="text-lg text-slate-400 leading-relaxed max-w-sm">
-                        Được hỗ trợ bởi <span class="text-primary font-semibold">OpenCV + Python</span>. Quản lý lớp học dễ dàng với công nghệ nhận diện khuôn mặt thời gian thực.
+                        Powered by <span class="text-primary font-semibold">OpenCV + Python</span>. Manage classroom attendance with real-time face recognition.
                     </p>
                 </div>
 
@@ -75,17 +75,17 @@
                 <div class="flex gap-4 mb-8">
                     <div class="flex items-center gap-2 text-sm">
                         <span class="material-symbols-outlined text-green-400">check_circle</span>
-                        <span class="text-slate-400"><span class="text-white font-bold">99.2%</span> Độ chính xác</span>
+                        <span class="text-slate-400"><span class="text-white font-bold">99.2%</span> Accuracy</span>
                     </div>
                     <div class="flex items-center gap-2 text-sm">
                         <span class="material-symbols-outlined text-primary">bolt</span>
-                        <span class="text-slate-400"><span class="text-white font-bold">&lt;1s</span> Phản hồi</span>
+                        <span class="text-slate-400"><span class="text-white font-bold">&lt;1s</span> Response</span>
                     </div>
                 </div>
 
                 <div class="flex flex-col gap-4 mt-auto">
                     <div class="flex items-center gap-4 text-slate-400 text-sm font-medium uppercase tracking-widest opacity-60 mb-2">
-                        Công nghệ cốt lõi
+                        Core technology
                     </div>
                     <div class="flex gap-6">
                         <div class="flex flex-col items-center gap-2 group/icon cursor-pointer">
@@ -110,7 +110,7 @@
                             <div class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/icon:border-primary/50 group-hover/icon:bg-primary/10 transition-all">
                                 <span class="material-symbols-outlined text-slate-400 group-hover/icon:text-primary">cloud</span>
                             </div>
-                            <span class="text-[10px] text-slate-500 uppercase tracking-widest">Đám mây</span>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-widest">Cloud</span>
                         </div>
                     </div>
                 </div>
@@ -120,9 +120,9 @@
             <div class="flex-1 p-8 md:p-12 flex flex-col justify-center bg-black/20 backdrop-blur-sm">
                 <h2 class="text-xl font-semibold mb-2 flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                    Chọn Cổng Truy Cập
+                    Choose a workspace
                 </h2>
-                <p class="text-sm text-slate-500 mb-8">Chọn loại truy cập để tiếp tục</p>
+                <p class="text-sm text-slate-500 mb-8">Select a workspace to continue</p>
 
                 <div class="space-y-4">
                     <!-- Schedule / Time Table - Moved to top -->
@@ -134,8 +134,8 @@
                                     <span class="material-symbols-outlined text-purple-400 text-2xl">calendar_month</span>
                                 </div>
                                 <div class="text-left">
-                                    <h3 class="font-semibold text-lg">Thời Khóa Biểu</h3>
-                                    <p class="text-sm text-slate-400">Điểm danh theo buổi học</p>
+                                    <h3 class="font-semibold text-lg">Class Schedule</h3>
+                                    <p class="text-sm text-slate-400">Attendance by class session</p>
                                 </div>
                             </div>
                             <span class="material-symbols-outlined text-purple-400 group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -151,8 +151,8 @@
                                     <span class="material-symbols-outlined text-slate-400 text-2xl">admin_panel_settings</span>
                                 </div>
                                 <div class="text-left">
-                                    <h3 class="font-semibold text-lg">Bảng Điều Khiển Admin</h3>
-                                    <p class="text-sm text-slate-400">Quản lý hồ sơ & người dùng</p>
+                                    <h3 class="font-semibold text-lg">Admin Dashboard</h3>
+                                    <p class="text-sm text-slate-400">Manage records and users</p>
                                 </div>
                             </div>
                             <span class="material-symbols-outlined text-slate-400">lock</span>
@@ -168,8 +168,8 @@
                                     <span class="material-symbols-outlined text-green-400 text-2xl">person_add</span>
                                 </div>
                                 <div class="text-left">
-                                    <h3 class="font-semibold text-lg">Đăng Ký Khuôn Mặt Mới</h3>
-                                    <p class="text-sm text-slate-400">Thêm sinh viên mới vào hệ thống</p>
+                                    <h3 class="font-semibold text-lg">Register a New Face</h3>
+                                    <p class="text-sm text-slate-400">Add a student to the system</p>
                                 </div>
                             </div>
                             <span class="material-symbols-outlined text-green-400 group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -185,8 +185,8 @@
                                     <span class="material-symbols-outlined text-primary text-2xl">face</span>
                                 </div>
                                 <div class="text-left">
-                                    <h3 class="font-semibold text-lg">Test Điểm Danh Demo</h3>
-                                    <p class="text-sm text-slate-400">Quét khuôn mặt để điểm danh</p>
+                                    <h3 class="font-semibold text-lg">Test Attendance</h3>
+                                    <p class="text-sm text-slate-400">Scan a face to check in</p>
                                 </div>
                             </div>
                             <span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -198,11 +198,11 @@
                     <div class="flex justify-between items-center text-xs text-slate-500">
                         <span class="flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                            Kết nối bảo mật
+                            Secure connection
                         </span>
                         <a class="hover:text-primary transition-colors flex items-center gap-1" href="#" id="needHelpLink">
                             <span class="material-symbols-outlined text-sm">help_outline</span>
-                            Cần trợ giúp?
+                            Need help?
                         </a>
                     </div>
                 </div>
@@ -219,7 +219,7 @@
                 <span class="material-symbols-outlined text-primary">groups</span>
             </div>
             <div>
-                <p class="text-xs text-slate-400 uppercase tracking-wide">Tổng sinh viên</p>
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Total students</p>
                 <p id="totalStudents" class="text-lg font-bold">{{ total_students }}</p>
             </div>
         </div>
@@ -229,7 +229,7 @@
                 <span class="material-symbols-outlined text-green-400">check_circle</span>
             </div>
             <div>
-                <p class="text-xs text-slate-400 uppercase tracking-wide">Điểm danh hôm nay</p>
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Today's attendance</p>
                 <p id="todayAttendance" class="text-lg font-bold text-green-400">{{ attendance_rate }}%</p>
             </div>
         </div>
@@ -239,7 +239,7 @@
                 <span class="material-symbols-outlined text-purple-400">videocam</span>
             </div>
             <div>
-                <p class="text-xs text-slate-400 uppercase tracking-wide">Camera hoạt động</p>
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Active cameras</p>
                 <p id="activeCameras" class="text-lg font-bold text-purple-400">{{ active_cameras|stringformat:"02d" }}</p>
             </div>
         </div>
@@ -249,15 +249,15 @@
                 <span class="material-symbols-outlined text-cyan-400">timer</span>
             </div>
             <div>
-                <p class="text-xs text-slate-400 uppercase tracking-wide">Tốc độ quét TB</p>
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Average scan time</p>
                 <p class="text-lg font-bold text-cyan-400">{{ avg_scan_time }}s</p>
             </div>
         </div>
         <div class="w-px h-10 bg-white/10 hidden md:block"></div>
         <div class="flex-1 flex justify-end">
             <p class="text-xs text-slate-500 text-right">
-                Đồng bộ lần cuối: <span id="lastSync" class="text-slate-300">Vừa xong</span><br />
-                Máy chủ: <span class="text-green-400">● Trực tuyến</span>
+                Last synchronized: <span id="lastSync" class="text-slate-300">Just now</span><br />
+                Server: <span class="text-green-400">● Online</span>
             </p>
         </div>
     </div>
@@ -271,7 +271,7 @@
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary">face</span>
-                    Quét Khuôn Mặt
+                    Scan Face
                 </h3>
                 <button id="closeModal" class="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-white/10 transition-colors">
                     <span class="material-symbols-outlined">close</span>
@@ -289,10 +289,10 @@
                             <span class="material-symbols-outlined text-6xl text-slate-600">person</span>
                         </div>
                     </div>
-                    <p class="text-slate-400 mb-6">Nhấn nút bên dưới để mở camera và bắt đầu nhận diện khuôn mặt.</p>
+                    <p class="text-slate-400 mb-6">Use the button below to open the camera and begin face recognition.</p>
                     <button id="startScanBtn" class="w-full py-4 px-6 bg-gradient-to-r from-primary to-indigo-600 rounded-xl font-bold text-lg hover:from-primary-glow hover:to-indigo-500 transition-all duration-300 flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined">camera</span>
-                        Mở Camera
+                        Open Camera
                     </button>
                 </div>
 
@@ -300,7 +300,7 @@
                 <div id="scanLoading" class="hidden">
                     <div class="flex flex-col items-center gap-4">
                         <div class="spinner"></div>
-                        <p class="text-slate-400">Đang kết nối camera...</p>
+                        <p class="text-slate-400">Connecting to camera...</p>
                     </div>
                 </div>
             </div>
@@ -308,7 +308,7 @@
             <div class="mt-6 pt-4 border-t border-white/10 text-center">
                 <p class="text-xs text-slate-500">
                     <span class="material-symbols-outlined text-[12px] align-middle">info</span>
-                    Đảm bảo khuôn mặt được chiếu sáng tốt và nhìn thẳng vào camera
+                    Make sure your face is well lit and look directly at the camera
                 </p>
             </div>
         </div>
@@ -323,7 +323,7 @@
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary">help</span>
-                    Hướng Dẫn Sử Dụng
+                    How to Check In
                 </h3>
                 <button id="closeHelpModal" class="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-white/10 transition-colors">
                     <span class="material-symbols-outlined">close</span>
@@ -336,8 +336,8 @@
                         <span class="font-bold">1</span>
                     </div>
                     <div>
-                        <h4 class="font-semibold mb-1">Nhấn "Điểm Danh Sinh Viên"</h4>
-                        <p class="text-sm text-slate-400">Hoặc nhấn phím Enter để truy cập nhanh</p>
+                        <h4 class="font-semibold mb-1">Select "Student Attendance"</h4>
+                        <p class="text-sm text-slate-400">Or press Enter for quick access</p>
                     </div>
                 </div>
                 <div class="flex gap-4 p-4 rounded-xl bg-white/5">
@@ -345,8 +345,8 @@
                         <span class="font-bold">2</span>
                     </div>
                     <div>
-                        <h4 class="font-semibold mb-1">Mở Camera</h4>
-                        <p class="text-sm text-slate-400">Cho phép truy cập camera khi được yêu cầu</p>
+                        <h4 class="font-semibold mb-1">Open the Camera</h4>
+                        <p class="text-sm text-slate-400">Allow camera access when prompted</p>
                     </div>
                 </div>
                 <div class="flex gap-4 p-4 rounded-xl bg-white/5">
@@ -354,8 +354,8 @@
                         <span class="font-bold">3</span>
                     </div>
                     <div>
-                        <h4 class="font-semibold mb-1">Nhìn vào Camera</h4>
-                        <p class="text-sm text-slate-400">Nhìn thẳng vào camera để có kết quả tốt nhất</p>
+                        <h4 class="font-semibold mb-1">Look at the Camera</h4>
+                        <p class="text-sm text-slate-400">Look directly at the camera for the best result</p>
                     </div>
                 </div>
                 <div class="flex gap-4 p-4 rounded-xl bg-white/5">
@@ -363,17 +363,17 @@
                         <span class="material-symbols-outlined">check</span>
                     </div>
                     <div>
-                        <h4 class="font-semibold mb-1">Hoàn thành!</h4>
-                        <p class="text-sm text-slate-400">Điểm danh của bạn sẽ được ghi nhận tự động</p>
+                        <h4 class="font-semibold mb-1">Done</h4>
+                        <p class="text-sm text-slate-400">Your attendance is recorded automatically</p>
                     </div>
                 </div>
             </div>
 
             <div class="mt-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
                 <p class="text-sm">
-                    <span class="font-semibold text-primary">Phím tắt:</span><br />
-                    <span class="text-slate-400">Nhấn <span class="kbd mx-1">Enter</span> để quét nhanh</span><br />
-                    <span class="text-slate-400">Nhấn <span class="kbd mx-1">Esc</span> để đóng cửa sổ</span>
+                    <span class="font-semibold text-primary">Keyboard shortcuts:</span><br />
+                    <span class="text-slate-400">Press <span class="kbd mx-1">Enter</span> to scan</span><br />
+                    <span class="text-slate-400">Press <span class="kbd mx-1">Esc</span> to close the window</span>
                 </p>
             </div>
         </div>
@@ -505,14 +505,14 @@
     elements.helpModalBackdrop?.addEventListener('click', closeHelpModalFn);
 
     elements.adminBtn.addEventListener('click', () => {
-        showToast('Đang chuyển đến Bảng điều khiển...', 'info');
+        showToast('Opening the dashboard...', 'info');
         setTimeout(() => {
             window.location.href = CONFIG.ADMIN_URL;
         }, 1000);
     });
 
     elements.registerBtn.addEventListener('click', () => {
-        showToast('Đang mở trang đăng ký...', 'info');
+        showToast('Opening face registration...', 'info');
         setTimeout(() => {
             window.location.href = CONFIG.REGISTER_URL;
         }, 1000);
@@ -558,9 +558,9 @@
     setInterval(fetchStats, 30000);
 
     setTimeout(() => {
-        showToast('Hệ thống sẵn sàng. Nhấn Enter để quét.', 'success');
+        showToast('System ready. Press Enter to scan.', 'success');
     }, 1000);
 
-    console.log('🚀 Hệ thống Điểm Danh AI đã khởi tạo (UTH)');
+    console.log('UTH AI Attendance initialized');
 </script>
 {% endblock %}

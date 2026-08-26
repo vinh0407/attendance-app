@@ -72,7 +72,7 @@ class ClassRoomAdmin(admin.ModelAdmin):
 
     def get_student_count(self, obj):
         return obj.students.count()
-    get_student_count.short_description = 'Số sinh viên'
+    get_student_count.short_description = 'Students'
 
 
 # =====================================================
@@ -89,7 +89,7 @@ class ScheduleAdmin(admin.ModelAdmin):
 
     def get_day_name(self, obj):
         return obj.get_day_of_week_display()
-    get_day_name.short_description = 'Thứ'
+    get_day_name.short_description = 'Day'
     get_day_name.admin_order_field = 'day_of_week'
 
 
@@ -108,17 +108,17 @@ class AttendanceSessionAdmin(admin.ModelAdmin):
 
     def get_subject(self, obj):
         return obj.schedule.subject.name
-    get_subject.short_description = 'Môn học'
+    get_subject.short_description = 'Subject'
     get_subject.admin_order_field = 'schedule__subject__name'
 
     def get_classroom(self, obj):
         return obj.schedule.classroom.name
-    get_classroom.short_description = 'Lớp học'
+    get_classroom.short_description = 'Class'
 
     def get_present_count(self, obj):
         return obj.get_present_count()
-    get_present_count.short_description = 'Có mặt'
+    get_present_count.short_description = 'Present'
 
     def get_total_students(self, obj):
         return obj.get_total_students()
-    get_total_students.short_description = 'Sĩ số'
+    get_total_students.short_description = 'Class size'

@@ -9,7 +9,7 @@ from portal.models import Student
 
 
 class Command(BaseCommand):
-    help = 'Đồng bộ face_database.pkl vào Django Student database'
+    help = 'Synchronize face_database.pkl with the central student database.'
 
     def handle(self, *args, **options):
         # Đường dẫn face_database.pkl
@@ -18,14 +18,14 @@ class Command(BaseCommand):
         my_faces_dir = os.path.join(base_dir, 'my_faces')
 
         if not os.path.exists(db_file):
-            self.stdout.write(self.style.ERROR(f'Không tìm thấy file: {db_file}'))
+            self.stdout.write(self.style.ERROR(f'File not found: {db_file}'))
             return
 
         # Đọc face database
         with open(db_file, 'rb') as f:
             face_db = pickle.load(f)
 
-        self.stdout.write(f'📦 Tìm thấy {len(face_db)} người trong face database:')
+        self.stdout.write(f'📦 Found {len(face_db)} people in the face database:')
         for name in face_db.keys():
             self.stdout.write(f'   - {name} ({len(face_db[name])} embeddings)')
 
@@ -49,7 +49,7 @@ class Command(BaseCommand):
                 student.is_registered = True
                 student.save()
                 updated_count += 1
-                self.stdout.write(self.style.WARNING(f'🔄 Đã có: {name} (ID: {student.student_id})'))
+                self.stdout.write(self.style.WARNING(f'🔄 Updated: {name} (ID: {student.student_id})'))
             else:
                 # Chưa có → tạo mới
                 # Tránh trùng student_id
@@ -64,10 +64,10 @@ class Command(BaseCommand):
                     is_registered=True,
                 )
                 created_count += 1
-                self.stdout.write(self.style.SUCCESS(f'✅ Tạo mới: {name} → {auto_id}'))
+                self.stdout.write(self.style.SUCCESS(f'✅ Created: {name} → {auto_id}'))
 
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS(
-            f'🎉 Hoàn thành! Tạo mới: {created_count}, Cập nhật: {updated_count}'
+            f'🎉 Complete! Created: {created_count}, Updated: {updated_count}'
         ))
-        self.stdout.write(f'📊 Tổng sinh viên trong DB: {Student.objects.count()}')
+        self.stdout.write(f'📊 Total students in database: {Student.objects.count()}')

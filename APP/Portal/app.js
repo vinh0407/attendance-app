@@ -1,5 +1,5 @@
 (() => {
-  const pageNames = {home:'Trang chủ',schedule:'Lịch học',grades:'Điểm số',attendance:'Điểm danh',subjects:'Môn học',forum:'Diễn đàn',messages:'Tin nhắn',notifications:'Thông báo',profile:'Hồ sơ cá nhân'};
+  const pageNames = {home:'Home',schedule:'Schedule',grades:'Grades',attendance:'Attendance',subjects:'Subjects',forum:'Forum',messages:'Messages',notifications:'Notifications',profile:'Profile'};
   const sidebar = document.querySelector('#sidebar');
   const menuToggle = document.querySelector('#menuToggle');
   const drawerScrim = document.querySelector('#drawerScrim');
@@ -36,32 +36,33 @@
     if (!portalData.schedule.length) { target.hidden = true; empty.hidden = false; return; }
     empty.hidden = true;
     target.hidden = false;
-    target.innerHTML = portalData.schedule.map((item) => `<article class="today-item"><div><strong>${escapeHtml(item.subject_name)}</strong><span>${escapeHtml(item.subject_id)} · ${escapeHtml(item.teacher || 'Chưa có giảng viên')}</span></div><div><strong>${escapeHtml(item.time_range)}</strong><span>${escapeHtml(item.room || item.classroom)}</span></div></article>`).join('');
+    target.innerHTML = portalData.schedule.map((item) => `<article class="today-item"><div><strong>${escapeHtml(item.subject_name)}</strong><span>${escapeHtml(item.subject_id)} · ${escapeHtml(item.teacher || 'Teacher not assigned')}</span></div><div><strong>${escapeHtml(item.time_range)}</strong><span>${escapeHtml(item.room || item.classroom)}</span></div></article>`).join('');
   }
 
   function renderAttendance() {
     const target = document.querySelector('#attendanceRows');
-    if (!portalData.attendance.length) { target.innerHTML = '<tr><td colspan="6">Chưa có bản ghi điểm danh.</td></tr>'; return; }
-    target.innerHTML = portalData.attendance.map((item) => `<tr><td>${escapeHtml(item.date)}</td><td><strong>${escapeHtml(item.subject_name)}</strong><small>${escapeHtml(item.subject_id)}</small></td><td>${escapeHtml(item.scheduled_time)}</td><td>${escapeHtml(item.check_in_time)}</td><td><span class="attendance-status status-${escapeHtml(item.status)}">${escapeHtml(item.attendance_label || item.status)}</span></td><td>${item.late_minutes ? `${escapeHtml(item.late_minutes)} phút` : '—'}</td></tr>`).join('');
+    if (!portalData.attendance.length) { target.innerHTML = '<tr><td colspan="6">No attendance records yet.</td></tr>'; return; }
+    const labels = {ON_TIME:'On time',LATE_LEVEL_1:'Late — Level 1',LATE_ONE_PERIOD:'Late — 1 period',ABSENT_TWO_PERIODS:'Absent — 2 periods',ABSENT:'Absent'};
+    target.innerHTML = portalData.attendance.map((item) => `<tr><td>${escapeHtml(item.date)}</td><td><strong>${escapeHtml(item.subject_name)}</strong><small>${escapeHtml(item.subject_id)}</small></td><td>${escapeHtml(item.scheduled_time)}</td><td>${escapeHtml(item.check_in_time)}</td><td><span class="attendance-status status-${escapeHtml(item.status)}">${escapeHtml(labels[item.attendance_code] || item.status)}</span></td><td>${item.late_minutes ? `${escapeHtml(item.late_minutes)} minutes` : '—'}</td></tr>`).join('');
   }
 
   function renderGrades() {
     const target = document.querySelector('#gradesRows');
-    if (!portalData.grades.length) { target.innerHTML = '<tr><td colspan="4">Chưa có dữ liệu điểm.</td></tr>'; return; }
+    if (!portalData.grades.length) { target.innerHTML = '<tr><td colspan="4">No grades available yet.</td></tr>'; return; }
     target.innerHTML = portalData.grades.map((item) => `<tr><td><strong>${escapeHtml(item.subject_name)}</strong><small>${escapeHtml(item.subject_id)}</small></td><td>${escapeHtml(item.semester || '—')}</td><td>${escapeHtml(item.assessment_type)}</td><td><strong>${escapeHtml(item.score)}</strong></td></tr>`).join('');
   }
 
   function renderSubjects() {
     const target = document.querySelector('#subjectRows');
-    if (!portalData.subjects.length) { target.innerHTML = '<tr><td colspan="4">Chưa có dữ liệu môn học.</td></tr>'; return; }
-    target.innerHTML = portalData.subjects.map((item) => `<tr><td><strong>${escapeHtml(item.subject_name)}</strong><small>${escapeHtml(item.subject_id)}</small></td><td>${escapeHtml(item.late_periods)} tiết <small>${escapeHtml(item.late_events)} lần</small></td><td>${escapeHtml(item.absent_periods)} tiết</td><td><span class="attendance-status ${item.exam_prohibited ? 'status-absent' : 'status-present'}">${escapeHtml(item.exam_status)}</span></td></tr>`).join('');
+    if (!portalData.subjects.length) { target.innerHTML = '<tr><td colspan="4">No subject data available yet.</td></tr>'; return; }
+    target.innerHTML = portalData.subjects.map((item) => `<tr><td><strong>${escapeHtml(item.subject_name)}</strong><small>${escapeHtml(item.subject_id)}</small></td><td>${escapeHtml(item.late_periods)} periods <small>${escapeHtml(item.late_events)} events</small></td><td>${escapeHtml(item.absent_periods)} periods</td><td><span class="attendance-status ${item.exam_prohibited ? 'status-absent' : 'status-present'}">${escapeHtml(item.exam_status)}</span></td></tr>`).join('');
   }
 
   function renderPortal() {
     const profile = portalData.profile;
     if (profile) {
       document.querySelector('#profileName').textContent = profile.full_name;
-      document.querySelector('#profileMeta').textContent = `${profile.student_id} · ${profile.class_name || 'Chưa có lớp'}`;
+      document.querySelector('#profileMeta').textContent = `${profile.student_id} · ${profile.class_name || 'Class not assigned'}`;
       document.querySelector('#profileInitial').textContent = (profile.full_name || 'U').trim().charAt(0).toUpperCase();
     }
     const summary = portalData.summary || {};
@@ -81,13 +82,13 @@
       portalData.profile = profile.data; portalData.schedule = schedule.data || [];
       portalData.attendance = attendance.data || []; portalData.summary = summary.data || {};
       portalData.grades = grades.data || []; portalData.subjects = subjects.data || [];
-      document.querySelector('#portalStatusTitle').textContent = 'Dữ liệu đã đồng bộ';
-      document.querySelector('#portalStatusCopy').textContent = 'Lịch học và lịch sử điểm danh đang lấy từ tài khoản của bạn.';
+      document.querySelector('#portalStatusTitle').textContent = 'Data synchronized';
+      document.querySelector('#portalStatusCopy').textContent = 'Your schedule and attendance history are up to date.';
       document.querySelector('#portalStatusTag').textContent = 'CONNECTED';
       renderPortal();
     } catch (error) {
-      document.querySelector('#portalStatusTitle').textContent = error.status === 401 ? 'Cần đăng nhập để xem dữ liệu' : 'Không thể đồng bộ dữ liệu';
-      document.querySelector('#portalStatusCopy').textContent = error.status === 401 ? 'Hãy đăng nhập bằng tài khoản sinh viên UTH.' : 'Kiểm tra kết nối backend rồi thử đồng bộ lại.';
+      document.querySelector('#portalStatusTitle').textContent = error.status === 401 ? 'Sign in to view your data' : 'Unable to synchronize data';
+      document.querySelector('#portalStatusCopy').textContent = error.status === 401 ? 'Sign in with your UTH student account.' : 'Check the server connection and try again.';
       document.querySelector('#portalStatusTag').textContent = error.status === 401 ? 'UNAUTHORIZED' : 'ERROR';
     }
   }
@@ -119,7 +120,7 @@
     other.hidden = isHome || isAttendance || isGrades || isSubjects;
     if (!isHome && !isAttendance && !isGrades && !isSubjects) {
       placeholderTitle.textContent = pageNames[activeRoute];
-      placeholderCopy.textContent = `${pageNames[activeRoute]} sẽ dùng cùng hệ thống dữ liệu và quyền truy cập của portal.`;
+      placeholderCopy.textContent = `${pageNames[activeRoute]} will use the same portal data and access permissions.`;
     }
     sidebar.classList.remove('is-open');
     menuToggle.setAttribute('aria-expanded', 'false');
@@ -141,14 +142,14 @@
       sidebar.classList.remove('is-open'); menuToggle.setAttribute('aria-expanded', 'false'); drawerScrim.hidden = true; menuToggle.focus();
     }
   });
-  document.querySelector('#refreshButton').addEventListener('click', () => loadPortal().then(() => showToast('Đã đồng bộ dữ liệu.')).catch(() => showToast('Không thể đồng bộ dữ liệu.')));
-  document.querySelector('#searchButton').addEventListener('click', () => showToast('Tìm kiếm sẽ khả dụng khi portal kết nối dữ liệu.'));
+  document.querySelector('#refreshButton').addEventListener('click', () => loadPortal().then(() => showToast('Data synchronized.')).catch(() => showToast('Unable to synchronize data.')));
+  document.querySelector('#searchButton').addEventListener('click', () => showToast('Search will be available when the portal data service is connected.'));
   document.querySelector('#themeToggle').addEventListener('click', (event) => {
     const button = event.currentTarget;
     const dark = document.body.classList.toggle('dark-preview');
     button.setAttribute('aria-pressed', String(dark));
     button.querySelector('b').textContent = dark ? 'Dark' : 'Light';
-    showToast(dark ? 'Dark mode đang ở bản preview.' : 'Đã chuyển về Light mode.');
+    showToast(dark ? 'Dark mode preview enabled.' : 'Light mode enabled.');
   });
   setRoute(window.location.hash.slice(1) || 'home');
   loadPortal();

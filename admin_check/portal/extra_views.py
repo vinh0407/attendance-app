@@ -59,7 +59,7 @@ def api_test_image(request):
         if frame is None:
             return JsonResponse({
                 'success': False,
-                'error': 'Khong doc duoc anh. Hay upload file anh (field ten: image).'
+                'error': 'Unable to read the image. Upload an image using the "image" field.'
             }, status=400)
 
         # Nhan dien khuon mat
@@ -120,7 +120,7 @@ def api_test_image(request):
                     else:
                         attendance_results.append({
                             'student_name': name,
-                            'error': 'Chua co trong DB. Goi GET /api/sync-faces/ truoc!'
+                            'error': 'Student is not in the database. Run GET /api/sync-faces/ first.'
                         })
                 except Exception as e:
                     attendance_results.append({'student_name': name, 'error': str(e)})
@@ -152,7 +152,7 @@ def api_sync_faces(request):
         if not os.path.exists(db_file):
             return JsonResponse({
                 'success': False,
-                'error': 'Khong tim thay face_database.pkl',
+                'error': 'face_database.pkl was not found.',
             }, status=404)
 
         with open(db_file, 'rb') as f:
@@ -194,7 +194,7 @@ def api_sync_faces(request):
 
         return JsonResponse({
             'success': True,
-            'message': f'Dong bo hoan tat: {len(created_list)} tao moi, {len(updated_list)} cap nhat',
+            'message': f'Synchronization complete: {len(created_list)} created, {len(updated_list)} updated.',
             'created': created_list,
             'updated': updated_list,
             'total_students': Student.objects.count(),

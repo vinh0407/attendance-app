@@ -41,7 +41,7 @@ def calculate_attendance_status(scheduled_time, check_in_time):
         return {
             "status": "present",
             "attendance_code": "ON_TIME",
-            "attendance_label": "ĐÚNG GIỜ",
+            "attendance_label": "ON TIME",
             "late_minutes": 0,
             "attendance_periods": 0,
         }
@@ -49,7 +49,7 @@ def calculate_attendance_status(scheduled_time, check_in_time):
         return {
             "status": "late",
             "attendance_code": "LATE_LEVEL_1",
-            "attendance_label": "TRỄ — LEVEL 1",
+            "attendance_label": "LATE — LEVEL 1",
             "late_minutes": late_minutes,
             "attendance_periods": 0,
         }
@@ -57,7 +57,7 @@ def calculate_attendance_status(scheduled_time, check_in_time):
         return {
             "status": "late",
             "attendance_code": "LATE_ONE_PERIOD",
-            "attendance_label": "TRỄ — 1 PERIOD",
+            "attendance_label": "LATE — 1 PERIOD",
             "late_minutes": late_minutes,
             "attendance_periods": 1,
         }
@@ -65,14 +65,14 @@ def calculate_attendance_status(scheduled_time, check_in_time):
         return {
             "status": "absent",
             "attendance_code": "ABSENT_TWO_PERIODS",
-            "attendance_label": "VẮNG — 2 PERIODS",
+            "attendance_label": "ABSENT — 2 PERIODS",
             "late_minutes": late_minutes,
             "attendance_periods": 2,
         }
     return {
         "status": "absent",
         "attendance_code": "ABSENT",
-        "attendance_label": "VẮNG",
+        "attendance_label": "ABSENT",
         "late_minutes": late_minutes,
         "attendance_periods": None,
     }
@@ -244,11 +244,11 @@ def record_absence_event(*, session, student, device_id='SYSTEM-FINALIZE', prefe
         scheduled_time=get_session_scheduled_time(session),
         late_minutes=0,
         attendance_code='ABSENT',
-        attendance_label='VẮNG',
+        attendance_label='ABSENT',
         attendance_periods=periods,
         method='SYSTEM_FINALIZE',
         device_id=str(device_id or 'SYSTEM-FINALIZE')[:80],
-        notes='Vắng sau khi chốt buổi học',
+        notes='Absent when the class session was finalized',
     )
     from .attendance_archive import archive_attendance_record
     transaction.on_commit(lambda: archive_attendance_record(record))
