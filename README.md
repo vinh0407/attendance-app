@@ -1,5 +1,11 @@
 # UTH Attendance System
 
+![UTH Attendance](https://img.shields.io/badge/UTH-Attendance_System-1D4ED8?style=for-the-badge)
+![Django](https://img.shields.io/badge/Django-4.2%2B-092E20?style=for-the-badge&logo=django&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![InsightFace](https://img.shields.io/badge/InsightFace-1.0.1-7C3AED?style=for-the-badge)
+![ONNX Runtime](https://img.shields.io/badge/ONNX_Runtime-1.18%2B-005CED?style=for-the-badge&logo=onnx&logoColor=white)
+
 UTH Attendance System is a face-recognition attendance platform for classroom demonstrations and controlled local-network use. It combines an attendance kiosk, a staff management application, and a student portal on one Django backend.
 
 ## Applications
