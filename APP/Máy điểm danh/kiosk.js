@@ -131,7 +131,12 @@ async function recognize() {
     const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = Math.round(640 * video.videoHeight / video.videoWidth); canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
     const response = await fetch(`${API}/api/recognize-face/`, { method:'POST', headers:kioskHeaders({'Content-Type':'application/json'}), body:JSON.stringify({ image:canvas.toDataURL('image/jpeg', .76), session_id:state.session.session_id || state.session.id, device_id }) });
     const payload = await response.json(); el('latency-label').textContent = `${Math.round(performance.now()-started)} ms`;
-    if (!response.ok || !payload.success) throw new Error(payload.error || 'recognition');
+    if (!response.ok || !payload.success) {
+      const error = new Error(payload.error || `Server returned ${response.status}`);
+      error.status = response.status;
+      error.code = payload.code || '';
+      throw error;
+    }
     const faces = payload.data?.recognized || []; drawDetections(faces);
     if (faces.length > 1) return setStatus('multiple', 'Please keep only<br>one person in frame', 'Wait until there is only one face inside the guide.', 'MULTIPLE FACES', '!');
     if (!faces.length) return setStatus('idle', 'Place your face<br>inside the guide', 'Look straight at the camera. Recognition starts automatically.');
@@ -140,7 +145,17 @@ async function recognize() {
     if (face.status === 'wrong_class' || face.attendance_code === 'WRONG_CLASS') return showResult(face, false);
     setStatus('recognizing', 'Verifying your<br>attendance', 'Checking your record against the current class session.', 'RECOGNIZING', '…');
     if (face.already_checked_in || (face.status === 'present' && !face.is_new_attendance)) showResult(face, true); else showResult(face, false);
-  } catch (error) { setConnection('offline','Sync error'); setStatus('error','Unable to<br>sync', 'Your face was recognized, but the server could not confirm attendance. Try again.', 'SYNC ERROR', '!'); }
+  } catch (error) {
+    console.error('Kiosk recognition failed', error);
+    const authFailure = error?.status === 401;
+    const copy = authFailure
+      ? 'Kiosk authentication failed. Reload the page or verify the kiosk key.'
+      : (error?.message && error.message !== 'recognition'
+          ? `Server could not confirm attendance: ${error.message}`
+          : 'The server could not confirm attendance. Try again.');
+    setConnection('offline', authFailure ? 'Authentication error' : 'Sync error');
+    setStatus('error', 'Unable to<br>sync', copy, authFailure ? 'KIOSK AUTH ERROR' : 'SYNC ERROR', '!');
+  }
   finally { state.sending = false; }
 }
 

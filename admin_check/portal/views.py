@@ -49,11 +49,15 @@ def student_portal_asset(request, path):
 
 def attendance_kiosk(request):
     """Serve the face kiosk on the same origin as the central API."""
-    return serve(request, 'index.html', document_root=KIOSK_FRONTEND_ROOT)
+    response = serve(request, 'index.html', document_root=KIOSK_FRONTEND_ROOT)
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 
 def attendance_kiosk_asset(request, path):
-    return serve(request, path, document_root=KIOSK_FRONTEND_ROOT)
+    response = serve(request, path, document_root=KIOSK_FRONTEND_ROOT)
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 
 def student_api_required(view):
